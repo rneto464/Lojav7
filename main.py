@@ -431,15 +431,16 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     # 3. RENDERIZAÇÃO
     # ---------------------------------------------------------
     try:
+        context = {
+            "dados": dados_cards,
+            "produtos_criticos": lista_criticos,
+            "todos_produtos": lista_todos_produtos,
+            "fornecedores": fornecedores,
+            "request": request
+        }
         return templates.TemplateResponse(
-            request,
             "dashboard.html", 
-            {
-                "dados": dados_cards,
-                "produtos_criticos": lista_criticos,
-                "todos_produtos": lista_todos_produtos,
-                "fornecedores": fornecedores
-            }
+            context
         )
     except Exception as e:
         print(f"[ERRO] Erro ao renderizar template: {e}")
