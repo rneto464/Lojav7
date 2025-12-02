@@ -75,6 +75,15 @@ Se o comando `uvicorn` não for reconhecido, use sempre `python -m uvicorn` ao i
    - Abra seu navegador e acesse: `http://localhost:8000`
    - A documentação interativa da API estará disponível em: `http://localhost:8000/docs`
 
+## 🚀 Deploy na Vercel
+
+A aplicação está configurada para deploy na Vercel. Consulte o arquivo `DEPLOY_VERCEL.md` para instruções detalhadas.
+
+**Deploy rápido:**
+1. Conecte seu repositório GitHub na Vercel
+2. Configure a variável de ambiente `DATABASE_URL`
+3. Deploy automático a cada push!
+
 ## 📁 Estrutura do Projeto
 
 ```
