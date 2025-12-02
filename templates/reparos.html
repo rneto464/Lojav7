@@ -115,6 +115,16 @@
                                             </p>
                                         </div>
                                         {% endif %}
+                                        <div>
+                                            <p class="text-xs text-gray-400 mb-1">Data de Cadastro</p>
+                                            <p class="text-sm font-medium text-gray-600">
+                                                {% if peca.created_at %}
+                                                    {{ peca.created_at.strftime('%d/%m/%Y %H:%M') if hasattr(peca.created_at, 'strftime') else (peca.created_at[:16] if isinstance(peca.created_at, str) else 'N/A') }}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -182,6 +192,16 @@
                                             </p>
                                         </div>
                                         {% endif %}
+                                        <div>
+                                            <p class="text-xs text-gray-400 mb-1">Data de Cadastro</p>
+                                            <p class="text-sm font-medium text-gray-600">
+                                                {% if servico.created_at %}
+                                                    {{ servico.created_at.strftime('%d/%m/%Y %H:%M') if hasattr(servico.created_at, 'strftime') else (servico.created_at[:16] if isinstance(servico.created_at, str) else 'N/A') }}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -276,11 +296,27 @@
                                         </div>
                                         {% endif %}
                                         <div>
-                                            <p class="text-xs text-gray-400 mb-1">Data</p>
+                                            <p class="text-xs text-gray-400 mb-1">Data de Criação</p>
                                             <p class="text-sm font-medium text-gray-600">
-                                                {{ ordem.created_at.strftime('%d/%m/%Y') if ordem.created_at else '-' }}
+                                                {% if ordem.created_at %}
+                                                    {{ ordem.created_at.strftime('%d/%m/%Y %H:%M') if hasattr(ordem.created_at, 'strftime') else (ordem.created_at[:16] if isinstance(ordem.created_at, str) else ordem.created_at) }}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
                                             </p>
                                         </div>
+                                        {% if ordem.completed_at %}
+                                        <div>
+                                            <p class="text-xs text-gray-400 mb-1">Data de Conclusão</p>
+                                            <p class="text-sm font-medium text-green-600">
+                                                {% if ordem.completed_at is string %}
+                                                    {{ ordem.completed_at[:16] }}
+                                                {% else %}
+                                                    {{ ordem.completed_at.strftime('%d/%m/%Y %H:%M') if hasattr(ordem.completed_at, 'strftime') else ordem.completed_at }}
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -1049,11 +1085,19 @@
                                         </div>
                                         ` : ''}
                                         <div>
-                                            <p class="text-xs text-gray-400 mb-1">Data</p>
+                                            <p class="text-xs text-gray-400 mb-1">Data de Criação</p>
                                             <p class="text-sm font-medium text-gray-600">
-                                                ${new Date(ordem.created_at).toLocaleDateString('pt-BR')}
+                                                ${new Date(ordem.created_at).toLocaleDateString('pt-BR')} ${new Date(ordem.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
                                             </p>
                                         </div>
+                                        ${ordem.completed_at ? `
+                                        <div>
+                                            <p class="text-xs text-gray-400 mb-1">Data de Conclusão</p>
+                                            <p class="text-sm font-medium text-green-600">
+                                                ${new Date(ordem.completed_at).toLocaleDateString('pt-BR')} ${new Date(ordem.completed_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+                                            </p>
+                                        </div>
+                                        ` : ''}
                                     </div>
                                 </div>
                             </div>
