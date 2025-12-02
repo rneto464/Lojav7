@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime
 
 # =========================================
 # 1. MODELOS PARA A IA / PROCESSAMENTO DE TEXTO
@@ -91,6 +92,7 @@ class RepairPartCreate(BaseModel):
     cost_price: Optional[float] = 0  # Custo de compra
     available_stock: Optional[int] = 0  # Estoque disponível
     min_stock_alert: Optional[int] = 5  # Alerta de estoque mínimo
+    created_at: Optional[datetime] = None  # Data de cadastro (opcional, usa data atual se não informado)
 
 class RepairPartUpdate(BaseModel):
     device_model: Optional[str] = None
@@ -111,6 +113,7 @@ class ServiceCreate(BaseModel):
     price: float  # Preço do serviço
     estimated_time: Optional[int] = None  # Tempo estimado em minutos
     status: Optional[str] = "active"  # 'active' ou 'inactive'
+    created_at: Optional[datetime] = None  # Data de cadastro (opcional, usa data atual se não informado)
 
 class ServiceUpdate(BaseModel):
     name: Optional[str] = None
@@ -140,6 +143,8 @@ class ServiceOrderCreate(BaseModel):
     parts: List[ServiceOrderPartCreate] = []  # Lista de peças físicas utilizadas
     services: List[ServiceOrderServiceCreate] = []  # Lista de serviços (mão de obra) realizados
     notes: Optional[str] = None  # Observações
+    created_at: Optional[datetime] = None  # Data de criação (opcional, usa data atual se não informado)
+    completed_at: Optional[datetime] = None  # Data de conclusão (opcional)
 
 class ServiceOrderUpdate(BaseModel):
     client_name: Optional[str] = None
@@ -166,6 +171,7 @@ class PurchaseCreate(BaseModel):
     shipping_cost: Optional[float] = 0  # Custo do frete
     items: List[PurchaseItemCreate]  # Lista de itens comprados
     notes: Optional[str] = None  # Observações
+    created_at: Optional[datetime] = None  # Data da compra (opcional, usa data atual se não informado)
 
 class PurchaseUpdate(BaseModel):
     supplier_name: Optional[str] = None

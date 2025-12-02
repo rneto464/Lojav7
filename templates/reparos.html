@@ -394,6 +394,12 @@
                     </div>
                 </div>
 
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Data de Cadastro (Opcional)</label>
+                    <input type="datetime-local" id="peca_created_at" name="peca_created_at" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    <p class="text-xs text-gray-500 mt-1">Deixe em branco para usar a data/hora atual</p>
+                </div>
+
                 <div class="pt-4 flex justify-end gap-3 border-t border-gray-200 mt-4">
                     <button type="button" onclick="fecharModal()" class="px-5 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Cancelar</button>
                     <button type="submit" class="px-5 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition">Salvar Peça</button>
@@ -444,6 +450,12 @@
                         <option value="active">Ativo</option>
                         <option value="inactive">Inativo</option>
                     </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Data de Cadastro (Opcional)</label>
+                    <input type="datetime-local" id="servico_created_at" name="servico_created_at" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
+                    <p class="text-xs text-gray-500 mt-1">Deixe em branco para usar a data/hora atual</p>
                 </div>
 
                 <div class="pt-4 flex justify-end gap-3 border-t border-gray-200 mt-4">
@@ -520,6 +532,13 @@
                     document.getElementById('cost_price').value = peca.cost_price || '';
                     document.getElementById('available_stock').value = peca.available_stock || 0;
                     document.getElementById('min_stock_alert').value = peca.min_stock_alert || 5;
+                    
+                    // Carrega data de cadastro se existir
+                    if (peca.created_at) {
+                        const dataCadastro = new Date(peca.created_at);
+                        const dataCadastroLocal = new Date(dataCadastro.getTime() - dataCadastro.getTimezoneOffset() * 60000);
+                        document.getElementById('peca_created_at').value = dataCadastroLocal.toISOString().slice(0, 16);
+                    }
                 }
             } catch (error) {
                 console.error('Erro ao carregar peça:', error);
@@ -541,6 +560,12 @@
                 available_stock: parseInt(formData.get('available_stock')) || 0,
                 min_stock_alert: parseInt(formData.get('min_stock_alert')) || 5
             };
+            
+            // Adiciona data personalizada se fornecida
+            const dataCadastro = formData.get('peca_created_at');
+            if (dataCadastro) {
+                dados.created_at = new Date(dataCadastro).toISOString();
+            }
             
             try {
                 let response;
@@ -659,6 +684,12 @@
                 estimated_time: formData.get('servico_estimated_time') ? parseInt(formData.get('servico_estimated_time')) : null,
                 status: formData.get('servico_status') || 'active'
             };
+            
+            // Adiciona data personalizada se fornecida
+            const dataCadastro = formData.get('servico_created_at');
+            if (dataCadastro) {
+                dados.created_at = new Date(dataCadastro).toISOString();
+            }
             
             try {
                 let response;

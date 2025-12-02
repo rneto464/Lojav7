@@ -1289,13 +1289,17 @@ async def criar_reparo(peca: RepairPartCreate, db: Session = Depends(get_db)):
         )
     
     try:
+        # Usa data personalizada se fornecida, senão usa data atual
+        data_cadastro = peca.created_at if peca.created_at else datetime.datetime.utcnow()
+        
         nova_peca = models.RepairPart(
             device_model=peca.device_model,
             part_name=peca.part_name,
             price=peca.price,
             cost_price=peca.cost_price or 0,
             available_stock=peca.available_stock or 0,
-            min_stock_alert=peca.min_stock_alert or 5
+            min_stock_alert=peca.min_stock_alert or 5,
+            created_at=data_cadastro
         )
         
         db.add(nova_peca)
@@ -1416,12 +1420,16 @@ async def criar_servico(servico: ServiceCreate, db: Session = Depends(get_db)):
         )
     
     try:
+        # Usa data personalizada se fornecida, senão usa data atual
+        data_cadastro = servico.created_at if servico.created_at else datetime.datetime.utcnow()
+        
         novo_servico = models.Service(
             name=servico.name,
             description=servico.description,
             price=servico.price,
             estimated_time=servico.estimated_time,
-            status=servico.status or "active"
+            status=servico.status or "active",
+            created_at=data_cadastro
         )
         
         db.add(novo_servico)
@@ -1866,6 +1874,10 @@ async def criar_ordem_servico(ordem: ServiceOrderCreate, db: Session = Depends(g
         
         total = valor_pecas + valor_servicos
         
+        # Usa data personalizada se fornecida, senão usa data atual
+        import datetime
+        data_criacao = ordem.created_at if ordem.created_at else datetime.datetime.utcnow()
+        
         # Cria a ordem
         nova_ordem = models.ServiceOrder(
             order_number=numero_ordem,
@@ -1876,7 +1888,9 @@ async def criar_ordem_servico(ordem: ServiceOrderCreate, db: Session = Depends(g
             service_description=ordem.service_description,
             status="em_andamento",
             total_value=total,
-            notes=ordem.notes
+            notes=ordem.notes,
+            created_at=data_criacao,
+            completed_at=ordem.completed_at if ordem.completed_at else None
         )
         
         db.add(nova_ordem)
@@ -2407,13 +2421,17 @@ async def criar_compra(compra: PurchaseCreate, db: Session = Depends(get_db)):
         valor_pecas = sum(item.unit_cost * item.quantity for item in compra.items)
         total = valor_pecas + (compra.shipping_cost or 0)
         
+        # Usa data personalizada se fornecida, senão usa data atual
+        data_compra = compra.created_at if compra.created_at else datetime.datetime.utcnow()
+        
         # Cria a compra
         nova_compra = models.Purchase(
             purchase_number=numero_compra,
             supplier_name=compra.supplier_name,
             shipping_cost=compra.shipping_cost or 0,
             total_value=total,
-            notes=compra.notes
+            notes=compra.notes,
+            created_at=data_compra
         )
         
         db.add(nova_compra)
