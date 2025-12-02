@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Depends
-from fastapi.templating import Jinja2Templates
+from starlette.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_, select
@@ -166,10 +166,11 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     """
     # Verifica se podemos usar o banco de dados
     if not can_use_database(db):
+        context = get_default_dashboard_data()
+        context["request"] = request
         return templates.TemplateResponse(
-            request,
             "dashboard.html", 
-            get_default_dashboard_data()
+            context
         )
     
     try:
@@ -457,11 +458,8 @@ async def produtos_page(request: Request, db: Session = Depends(get_db)):
     # Verifica se podemos usar o banco de dados
     if not can_use_database(db):
         return templates.TemplateResponse(
-            request,
             "products.html", 
-            {
-                "products": []
-            }
+            {"products": [], "request": request}
         )
     
     try:
@@ -474,11 +472,8 @@ async def produtos_page(request: Request, db: Session = Depends(get_db)):
         products = []
 
     return templates.TemplateResponse(
-        request,
         "products.html", 
-        {
-            "products": products
-        }
+        {"products": products, "request": request}
     )
 
 @app.get("/fornecedores", response_class=HTMLResponse)
@@ -486,9 +481,8 @@ async def fornecedores_page(request: Request, db: Session = Depends(get_db)):
     # Verifica se podemos usar o banco de dados
     if not can_use_database(db):
         return templates.TemplateResponse(
-            request,
             "suppliers.html", 
-            {"suppliers": [], "products": []}
+            {"suppliers": [], "products": [], "request": request}
         )
     
     try:
@@ -502,9 +496,8 @@ async def fornecedores_page(request: Request, db: Session = Depends(get_db)):
         products = []
     
     return templates.TemplateResponse(
-        request,
         "suppliers.html", 
-        {"suppliers": suppliers, "products": products}
+        {"suppliers": suppliers, "products": products, "request": request}
     )
 
 # --- API: LISTAR TODOS OS PRODUTOS (para seleção em movimentações) ---
@@ -1009,9 +1002,8 @@ async def movimentacoes_page(request: Request, db: Session = Depends(get_db)):
     # Verifica se podemos usar o banco de dados
     if not can_use_database(db):
         return templates.TemplateResponse(
-            request,
             "movements.html", 
-            {"movements": []}
+            {"movements": [], "request": request}
         )
     
     try:
@@ -1027,9 +1019,8 @@ async def movimentacoes_page(request: Request, db: Session = Depends(get_db)):
         movements = []
         
     return templates.TemplateResponse(
-        request,
         "movements.html", 
-        {"movements": movements}
+        {"movements": movements, "request": request}
     )
 
 # --- API: CRIAR MOVIMENTAÇÃO (O "Coração" do Estoque) ---
@@ -1126,11 +1117,11 @@ async def configuracoes_page(request: Request, db: Session = Depends(get_db)):
             suppliers = []
     
     return templates.TemplateResponse(
-        request,
         "configuracoes.html",
         {
             "config": config,
-            "suppliers": suppliers
+            "suppliers": suppliers,
+            "request": request
         }
     )
 
@@ -1176,12 +1167,12 @@ async def reparos_page(request: Request, db: Session = Depends(get_db)):
     """Página de gerenciamento de peças físicas e serviços"""
     if not can_use_database(db):
         return templates.TemplateResponse(
-            request,
             "reparos.html",
             {
                 "pecas": [],
                 "servicos": [],
-                "pecas_disponiveis": []
+                "pecas_disponiveis": [],
+                "request": request
             }
         )
     
@@ -1203,12 +1194,12 @@ async def reparos_page(request: Request, db: Session = Depends(get_db)):
         pecas_disponiveis = []
     
     return templates.TemplateResponse(
-        request,
         "reparos.html",
         {
             "pecas": pecas,
             "servicos": servicos,
-            "pecas_disponiveis": pecas_disponiveis
+            "pecas_disponiveis": pecas_disponiveis,
+            "request": request
         }
     )
 
@@ -1569,11 +1560,11 @@ async def ordens_servico_page(request: Request, db: Session = Depends(get_db)):
     """Página de gerenciamento de ordens de serviço"""
     if not can_use_database(db):
         return templates.TemplateResponse(
-            request,
             "ordens_servico.html",
             {
                 "ordens": [],
-                "pecas": []
+                "pecas": [],
+                "request": request
             }
         )
     
@@ -1591,11 +1582,11 @@ async def ordens_servico_page(request: Request, db: Session = Depends(get_db)):
         pecas = []
     
     return templates.TemplateResponse(
-        request,
         "ordens_servico.html",
         {
             "ordens": ordens,
-            "pecas": pecas
+            "pecas": pecas,
+            "request": request
         }
     )
 
@@ -2164,9 +2155,8 @@ async def financas_page(request: Request, db: Session = Depends(get_db)):
     """Página de finanças - compras e lucros"""
     if not can_use_database(db):
         return templates.TemplateResponse(
-            request,
             "financas.html",
-            {"purchases": [], "service_orders": [], "error": "Banco de dados não disponível"}
+            {"purchases": [], "service_orders": [], "error": "Banco de dados não disponível", "request": request}
         )
     
     try:
@@ -2303,19 +2293,18 @@ async def financas_page(request: Request, db: Session = Depends(get_db)):
             })
         
         return templates.TemplateResponse(
-            request,
             "financas.html",
             {
                 "purchases": purchases_data,
-                "service_orders": orders_data
+                "service_orders": orders_data,
+                "request": request
             }
         )
     except Exception as e:
         print(f"[ERRO] Erro ao carregar página de finanças: {e}")
         return templates.TemplateResponse(
-            request,
             "financas.html",
-            {"purchases": [], "service_orders": [], "error": str(e)}
+            {"purchases": [], "service_orders": [], "error": str(e), "request": request}
         )
 
 # --- API: LISTAR COMPRAS ---
