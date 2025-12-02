@@ -18,5 +18,6 @@ if os.getcwd() != root_dir:
 # Importa a aplicação FastAPI
 from main import app
 
-# Para Vercel, apenas exportar o app é suficiente
-# A Vercel detecta automaticamente aplicações ASGI/FastAPI
+# Exporta o app para a Vercel
+# A Vercel detecta automaticamente aplicações ASGI/FastAPI quando o app é exportado diretamente
+__all__ = ['app']
