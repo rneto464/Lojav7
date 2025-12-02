@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movimentações - Gestão de Estoque</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Inter', sans-serif; background-color: #f9fafb; } </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="box" class="w-8 h-8"></i>
+                    <div>
+                        <h1 class="text-xl font-bold leading-tight">Gestão de Estoque</h1>
+                        <p class="text-blue-200 text-xs">Sistema Inteligente de Capas</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex space-x-4 text-sm font-medium">
+                <a href="/" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Dashboard</a>
+                <a href="/produtos" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Produtos</a>
+                <a href="/fornecedores" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Fornecedores</a>
+                <a href="/reparos" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Peças</a>
+                <a href="/financas" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Finanças</a>
+                <a href="/movimentacoes" class="bg-white/20 px-4 py-2 rounded-md transition text-white">Movimentações</a>
+                <a href="/configuracoes" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition flex items-center justify-center" title="Configurações">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-8">
+        
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Movimentações de Estoque</h2>
+                <p class="text-gray-500 mt-1">Histórico de todas as entradas e saídas</p>
+            </div>
+            
+            <button onclick="abrirModal()" class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-md transition transform hover:scale-105">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+                Nova Movimentação
+            </button>
+        </div>
+
+        <div class="space-y-4">
+            
+            {% for mov in movements %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition duration-200">
+                <div class="flex justify-between items-start">
+                    
+                    <div class="flex gap-4 w-full">
+                        
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0
+                            {% if mov.movement_type == 'entrada' %} bg-green-50 text-green-600
+                            {% elif mov.movement_type == 'saida' %} bg-red-50 text-red-500
+                            {% else %} bg-amber-50 text-amber-500 {% endif %}">
+                            
+                            {% if mov.movement_type == 'entrada' %} <i data-lucide="trending-up" class="w-6 h-6"></i>
+                            {% elif mov.movement_type == 'saida' %} <i data-lucide="trending-down" class="w-6 h-6"></i>
+                            {% else %} <i data-lucide="refresh-cw" class="w-6 h-6"></i> {% endif %}
+                        </div>
+
+                        <div class="flex-grow">
+                            <div class="flex items-center gap-3 mb-1">
+                                <h3 class="text-lg font-bold text-gray-900">
+                                    {% if mov.variation and mov.variation.product %}{{ mov.variation.product.name }}{% else %}Produto não encontrado{% endif %}
+                                </h3>
+                                
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide
+                                    {% if mov.movement_type == 'entrada' %} bg-green-100 text-green-700
+                                    {% elif mov.movement_type == 'saida' %} bg-red-100 text-red-700
+                                    {% else %} bg-amber-100 text-amber-700 {% endif %}">
+                                    {{ mov.movement_type }}
+                                </span>
+                            </div>
+
+                            <div class="flex justify-between items-center w-full pr-10">
+                                <p class="text-sm text-gray-500">
+                                    {% if mov.variation %}
+                                        {{ mov.variation.color_name or 'N/A' }} • <span class="font-mono text-gray-400">{{ mov.variation.full_sku or 'N/A' }}</span>
+                                    {% else %}
+                                        Variação não encontrada
+                                    {% endif %}
+                                </p>
+                                <p class="text-xs text-gray-400 font-medium">
+                                    {% if mov.created_at %}{{ mov.created_at.strftime('%d/%m/%Y %H:%M') }}{% else %}Data não disponível{% endif %}
+                                </p>
+                            </div>
+
+                            <div class="mt-4 flex items-center gap-6 text-sm">
+                                <div>
+                                    <p class="text-xs text-gray-400 mb-0.5">Estoque Anterior</p>
+                                    <p class="font-bold text-gray-800 text-lg">{{ mov.previous_stock if mov.previous_stock is not none else 0 }} un</p>
+                                </div>
+                                
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-gray-300"></i>
+                                
+                                <div>
+                                    <p class="text-xs text-gray-400 mb-0.5">Quantidade</p>
+                                    <p class="font-bold text-lg 
+                                        {% if mov.movement_type == 'entrada' %} text-green-600
+                                        {% elif mov.movement_type == 'saida' %} text-red-500
+                                        {% else %} text-amber-500 {% endif %}">
+                                        
+                                        {% if mov.movement_type == 'entrada' %}+{{ mov.quantity if mov.quantity is not none else 0 }} un
+                                        {% else %}-{{ mov.quantity if mov.quantity is not none else 0 }} un{% endif %}
+                                    </p>
+                                </div>
+
+                                <span class="text-gray-300 text-xl font-light">=</span>
+
+                                <div>
+                                    <p class="text-xs text-gray-400 mb-0.5">Estoque Atual</p>
+                                    <p class="font-bold text-blue-600 text-lg">{{ mov.new_stock if mov.new_stock is not none else 0 }} un</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-right min-w-[150px]">
+                        <p class="text-xs text-gray-400 mb-1">Motivo</p>
+                        <p class="font-semibold text-gray-800">{{ mov.reason }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if not movements %}
+            <div class="text-center py-20 bg-white rounded-xl border border-gray-100 shadow-sm">
+                <div class="inline-block p-4 rounded-full bg-blue-50 mb-4">
+                    <i data-lucide="clipboard-list" class="w-10 h-10 text-blue-400"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900">Sem histórico</h3>
+                <p class="text-gray-500 mt-2">Nenhuma movimentação registrada ainda.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="modalMovimento" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            
+            <div class="flex justify-between items-center p-6 border-b border-gray-100">
+                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <i data-lucide="arrow-left-right" class="w-5 h-5 text-blue-600"></i>
+                    <span id="modalTitulo">Selecione um Produto</span>
+                </h3>
+                <button onclick="fecharModal()" class="text-gray-400 hover:text-red-500 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Etapa 1: Seleção de Produto -->
+            <div id="etapaSelecaoProduto" class="p-6 overflow-y-auto flex-1">
+                <div class="mb-4">
+                    <input type="text" id="buscaProduto" placeholder="Buscar produto..." 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div id="listaProdutos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Produtos serão carregados aqui via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Etapa 2: Seleção de Variação e Formulário -->
+            <div id="etapaFormulario" class="p-6 overflow-y-auto flex-1 hidden">
+                <div class="mb-4">
+                    <button onclick="voltarSelecaoProduto()" class="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        Voltar para lista de produtos
+                    </button>
+                    <h4 id="nomeProdutoSelecionado" class="text-lg font-bold text-gray-900 mt-2"></h4>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Selecione a Cor/Variação</label>
+                    <div id="listaVariacoes" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <!-- Variações serão carregadas aqui -->
+                    </div>
+                </div>
+
+                <form onsubmit="salvarMovimento(event)" class="space-y-4">
+                    <input type="hidden" name="sku" id="skuSelecionado" required>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Tipo</label>
+                            <select name="movement_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                <option value="entrada">Entrada (+)</option>
+                                <option value="saida">Saída (-)</option>
+                                <option value="ajuste">Ajuste de Inventário (-)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Quantidade</label>
+                            <input type="number" name="quantity" min="1" placeholder="Ex: 10" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Motivo</label>
+                        <input type="text" name="reason" placeholder="Ex: Venda, Reposição, Quebra..." required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <div class="pt-4 flex justify-end gap-3 border-t border-gray-50 mt-2">
+                        <button type="button" onclick="fecharModal()" class="px-5 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Cancelar</button>
+                        <button type="submit" class="px-5 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition">Confirmar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        let produtosData = [];
+        let produtoSelecionado = null;
+
+        async function carregarProdutos() {
+            try {
+                const response = await fetch('/api/produtos');
+                const data = await response.json();
+                produtosData = data.products || [];
+                renderizarProdutos(produtosData);
+            } catch (error) {
+                console.error('Erro ao carregar produtos:', error);
+                alert('Erro ao carregar produtos.');
+            }
+        }
+
+        function renderizarProdutos(produtos) {
+            const container = document.getElementById('listaProdutos');
+            container.innerHTML = '';
+
+            if (produtos.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center col-span-full">Nenhum produto encontrado.</p>';
+                return;
+            }
+
+            produtos.forEach(produto => {
+                const card = document.createElement('div');
+                card.className = 'bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-md transition cursor-pointer';
+                card.onclick = () => selecionarProduto(produto);
+                
+                const totalVariacoes = produto.variations.length;
+                const totalEstoque = produto.variations.reduce((sum, v) => sum + (v.available_stock || 0), 0);
+                
+                card.innerHTML = `
+                    <div class="flex items-start justify-between mb-2">
+                        <h4 class="font-bold text-gray-900 text-lg">${produto.name}</h4>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                    <div class="text-sm text-gray-500 space-y-1">
+                        <p><span class="font-medium">${totalVariacoes}</span> variação${totalVariacoes !== 1 ? 'ões' : ''}</p>
+                        <p><span class="font-medium">${totalEstoque}</span> unidades em estoque</p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            lucide.createIcons();
+        }
+
+        function selecionarProduto(produto) {
+            produtoSelecionado = produto;
+            document.getElementById('nomeProdutoSelecionado').textContent = produto.name;
+            document.getElementById('etapaSelecaoProduto').classList.add('hidden');
+            document.getElementById('etapaFormulario').classList.remove('hidden');
+            document.getElementById('modalTitulo').textContent = 'Nova Movimentação';
+            
+            renderizarVariacoes(produto.variations);
+        }
+
+        function renderizarVariacoes(variacoes) {
+            const container = document.getElementById('listaVariacoes');
+            container.innerHTML = '';
+
+            if (variacoes.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center col-span-full">Nenhuma variação encontrada.</p>';
+                return;
+            }
+
+            variacoes.forEach(variacao => {
+                const card = document.createElement('div');
+                card.className = `border-2 rounded-lg p-3 cursor-pointer transition ${
+                    variacao.available_stock > 0 
+                        ? 'border-gray-200 hover:border-blue-500 hover:shadow-md' 
+                        : 'border-gray-100 opacity-60'
+                }`;
+                card.onclick = () => selecionarVariacao(variacao, card);
+                
+                const estoqueClass = variacao.available_stock > 0 ? 'text-green-600' : 'text-red-500';
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-semibold text-gray-900">${variacao.color_name || 'Sem cor'}</span>
+                        <span class="text-xs ${estoqueClass} font-medium">${variacao.available_stock || 0} un</span>
+                    </div>
+                    <p class="text-xs text-gray-500 font-mono">${variacao.full_sku}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selecionarVariacao(variacao, elemento) {
+            document.getElementById('skuSelecionado').value = variacao.full_sku;
+            
+            // Destacar a variação selecionada
+            document.querySelectorAll('#listaVariacoes > div').forEach(card => {
+                card.classList.remove('border-blue-600', 'bg-blue-50');
+                card.classList.add('border-gray-200');
+            });
+            elemento.classList.remove('border-gray-200');
+            elemento.classList.add('border-blue-600', 'bg-blue-50');
+        }
+
+        function voltarSelecaoProduto() {
+            produtoSelecionado = null;
+            document.getElementById('etapaSelecaoProduto').classList.remove('hidden');
+            document.getElementById('etapaFormulario').classList.add('hidden');
+            document.getElementById('modalTitulo').textContent = 'Selecione um Produto';
+            document.getElementById('buscaProduto').value = '';
+            document.getElementById('skuSelecionado').value = '';
+            renderizarProdutos(produtosData);
+        }
+
+        function abrirModal() {
+            document.getElementById('modalMovimento').classList.remove('hidden');
+            document.getElementById('modalMovimento').classList.add('flex');
+            carregarProdutos();
+        }
+
+        function fecharModal() {
+            document.getElementById('modalMovimento').classList.add('hidden');
+            document.getElementById('modalMovimento').classList.remove('flex');
+            voltarSelecaoProduto();
+        }
+
+        // Busca de produtos
+        document.getElementById('buscaProduto')?.addEventListener('input', function(e) {
+            const termo = e.target.value.toLowerCase();
+            const produtosFiltrados = produtosData.filter(p => 
+                p.name.toLowerCase().includes(termo)
+            );
+            renderizarProdutos(produtosFiltrados);
+        });
+
+        async function salvarMovimento(event) {
+            event.preventDefault();
+            
+            const sku = document.getElementById('skuSelecionado').value;
+            if (!sku) {
+                alert('Por favor, selecione uma variação de cor.');
+                return;
+            }
+            
+            const btn = event.target.querySelector('button[type="submit"]');
+            btn.innerHTML = 'Processando...';
+            btn.disabled = true;
+
+            const formData = new FormData(event.target);
+            const dados = Object.fromEntries(formData.entries());
+            dados.quantity = parseInt(dados.quantity);
+
+            try {
+                const response = await fetch('/api/movimentacoes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dados)
+                });
+
+                let resultado = {};
+                try {
+                    resultado = await response.json();
+                } catch (e) {
+                    const text = await response.text();
+                    resultado = { message: text || 'Erro desconhecido' };
+                }
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Erro: ' + (resultado.message || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Erro de conexão.');
+            } finally {
+                btn.innerHTML = 'Confirmar';
+                btn.disabled = false;
+            }
+        }
+        
+        // Fecha ao clicar fora
+        document.getElementById('modalMovimento').addEventListener('click', function(e) {
+            if (e.target === this) fecharModal();
+        });
+    </script>
+</body>
+</html>

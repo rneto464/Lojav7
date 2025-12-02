@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fornecedores - Gestão de Estoque</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Inter', sans-serif; background-color: #f9fafb; } </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="box" class="w-8 h-8"></i>
+                    <div>
+                        <h1 class="text-xl font-bold leading-tight">Gestão de Estoque</h1>
+                        <p class="text-blue-200 text-xs">Sistema Inteligente de Capas</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex space-x-4 text-sm font-medium">
+                <a href="/" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Dashboard</a>
+                <a href="/produtos" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Produtos</a>
+                <a href="/fornecedores" class="bg-white/20 px-4 py-2 rounded-md transition text-white">Fornecedores</a>
+                <a href="/reparos" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Peças</a>
+                <a href="/financas" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Finanças</a>
+                <a href="/movimentacoes" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Movimentações</a>
+                <a href="/configuracoes" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition flex items-center justify-center" title="Configurações">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-8">
+        
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Fornecedores</h2>
+                <p class="text-gray-500 mt-1">Gerencie seus parceiros de negócio</p>
+            </div>
+            
+            <button onclick="abrirModal()" class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-md transition transform hover:scale-105">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+                Cadastrar Fornecedor
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for sup in suppliers %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition duration-200 flex flex-col h-full">
+                
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                        <i data-lucide="building-2" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 leading-tight">{{ sup.name }}</h3>
+                        <span class="text-xs text-gray-400 font-mono">ID: #{{ sup.id }}</span>
+                    </div>
+                </div>
+
+                <div class="space-y-2 mb-6 text-sm text-gray-600">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="mail" class="w-4 h-4 text-gray-400"></i>
+                        {{ sup.email }}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="phone" class="w-4 h-4 text-gray-400"></i>
+                        {{ sup.phone }}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <p class="text-sm">
+                        <span class="font-semibold text-gray-900">Contato:</span> {{ sup.contact_person }}
+                    </p>
+                </div>
+
+                {% if sup.products %}
+                <div class="mb-4">
+                    <p class="text-xs text-gray-500 uppercase font-semibold mb-2">Produtos Fornecidos</p>
+                    <div class="flex flex-wrap gap-2">
+                        {% for produto in sup.products %}
+                        <span class="inline-flex px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-md">
+                            {{ produto.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="bg-blue-50/50 border-l-4 border-blue-500 p-3 rounded-r-lg mb-6 flex-grow">
+                    <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Observações</p>
+                    <p class="text-sm text-gray-700 leading-relaxed">
+                        {{ sup.observations if sup.observations else "Nenhuma observação registrada." }}
+                    </p>
+                </div>
+
+                <div class="flex justify-between items-end pt-4 border-t border-gray-50 mt-auto">
+                    <div class="flex items-center gap-2 text-gray-600">
+                        <i data-lucide="package" class="w-4 h-4"></i>
+                        <span class="text-sm font-medium">{{ sup.products|length if sup.products else 0 }} produto{{ 's' if (sup.products|length if sup.products else 0) != 1 else '' }}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <p class="text-xs text-gray-400">Custo médio</p>
+                            <p class="text-lg font-bold text-emerald-600">R$ 0,00</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editarFornecedor({{ sup.id }})" class="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition" title="Editar fornecedor">
+                                <i data-lucide="edit" class="w-5 h-5"></i>
+                            </button>
+                            <button onclick="excluirFornecedor({{ sup.id }}, '{{ sup.name }}')" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition" title="Excluir fornecedor">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if not suppliers %}
+        <div class="text-center py-20 bg-white rounded-xl border border-gray-100 shadow-sm mt-6">
+            <div class="inline-block p-4 rounded-full bg-blue-50 mb-4">
+                <i data-lucide="users" class="w-10 h-10 text-blue-400"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900">Nenhum fornecedor cadastrado</h3>
+            <p class="text-gray-500 mt-2">Comece cadastrando seus parceiros.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div id="modalFornecedor" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            
+            <div class="flex justify-between items-center p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
+                <h3 id="modalTituloFornecedor" class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-blue-600"></i>
+                    Novo Fornecedor
+                </h3>
+                <button onclick="fecharModal()" class="text-gray-400 hover:text-red-500 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <form id="formFornecedor" onsubmit="salvarFornecedor(event)" class="p-6 space-y-4">
+                <input type="hidden" id="fornecedorId" name="fornecedor_id" value="">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nome da Empresa</label>
+                    <input type="text" name="name" placeholder="Ex: CapasMaster Importadora" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                        <input type="email" name="email" placeholder="contato@empresa.com" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Telefone</label>
+                        <input type="text" name="phone" placeholder="(11) 9999-9999" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Pessoa de Contato</label>
+                    <input type="text" name="contact_person" placeholder="Ex: João Silva" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Observações / Contrato</label>
+                    <textarea name="observations" rows="3" placeholder="Ex: Prazo de entrega: 7 dias. Frete grátis acima de R$500"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Produtos que este fornecedor vende</label>
+                    <div class="max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3 bg-gray-50">
+                        {% if products %}
+                        <div class="space-y-2">
+                            {% for produto in products %}
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-white p-2 rounded transition">
+                                <input type="checkbox" name="product_ids" value="{{ produto.id }}" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">{{ produto.name }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-sm text-gray-500 text-center py-4">Nenhum produto cadastrado ainda.</p>
+                        {% endif %}
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                        <i data-lucide="info" class="w-3 h-3"></i> Selecione os produtos que este fornecedor fornece
+                    </p>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3 border-t border-gray-50 mt-2">
+                    <button type="button" onclick="fecharModal()" class="px-5 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition">Salvar Fornecedor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function abrirModal() {
+            // Limpa o formulário e reseta para modo criação
+            document.getElementById('formFornecedor').reset();
+            document.getElementById('fornecedorId').value = '';
+            document.getElementById('modalTituloFornecedor').innerHTML = '<i data-lucide="user-plus" class="w-5 h-5 text-blue-600"></i> Novo Fornecedor';
+            // Desmarca todos os checkboxes
+            document.querySelectorAll('input[name="product_ids"]').forEach(cb => cb.checked = false);
+            document.getElementById('modalFornecedor').classList.remove('hidden');
+            document.getElementById('modalFornecedor').classList.add('flex');
+            lucide.createIcons();
+        }
+
+        // Função para editar fornecedor
+        async function editarFornecedor(fornecedorId) {
+            try {
+                const response = await fetch(`/api/fornecedores/${fornecedorId}`);
+                if (!response.ok) {
+                    alert('Erro ao carregar fornecedor');
+                    return;
+                }
+                
+                const fornecedor = await response.json();
+                
+                // Preenche o formulário
+                document.getElementById('fornecedorId').value = fornecedor.id;
+                document.querySelector('input[name="name"]').value = fornecedor.name || '';
+                document.querySelector('input[name="email"]').value = fornecedor.email || '';
+                document.querySelector('input[name="phone"]').value = fornecedor.phone || '';
+                document.querySelector('input[name="contact_person"]').value = fornecedor.contact_person || '';
+                document.querySelector('textarea[name="observations"]').value = fornecedor.observations || '';
+                
+                // Atualiza título do modal
+                document.getElementById('modalTituloFornecedor').innerHTML = '<i data-lucide="edit" class="w-5 h-5 text-blue-600"></i> Editar Fornecedor';
+                
+                // Marca os produtos que o fornecedor vende
+                document.querySelectorAll('input[name="product_ids"]').forEach(cb => {
+                    cb.checked = fornecedor.product_ids && fornecedor.product_ids.includes(parseInt(cb.value));
+                });
+                
+                // Abre o modal
+                const modal = document.getElementById('modalFornecedor');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao carregar fornecedor para edição');
+            }
+        }
+
+        function fecharModal() {
+            document.getElementById('modalFornecedor').classList.add('hidden');
+            document.getElementById('modalFornecedor').classList.remove('flex');
+            // Limpa o formulário
+            document.getElementById('formFornecedor').reset();
+            document.getElementById('fornecedorId').value = '';
+        }
+
+        async function salvarFornecedor(event) {
+            event.preventDefault();
+            
+            const btn = event.target.querySelector('button[type="submit"]');
+            const textoOriginal = btn.innerHTML;
+            btn.innerHTML = 'Salvando...';
+            btn.disabled = true;
+
+            const formData = new FormData(event.target);
+            const dados = Object.fromEntries(formData.entries());
+            
+            // Coleta os IDs dos produtos selecionados
+            const productIds = [];
+            formData.getAll('product_ids').forEach(id => {
+                productIds.push(parseInt(id));
+            });
+            dados.product_ids = productIds;
+
+            try {
+                const fornecedorId = document.getElementById('fornecedorId').value;
+                let response;
+                
+                if (fornecedorId) {
+                    // Atualiza fornecedor existente
+                    response = await fetch(`/api/fornecedores/${fornecedorId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dados)
+                    });
+                } else {
+                    // Cria novo fornecedor
+                    response = await fetch('/api/fornecedores', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dados)
+                    });
+                }
+
+                let resultado = {};
+                try {
+                    resultado = await response.json();
+                } catch (e) {
+                    const text = await response.text();
+                    resultado = { message: text || 'Erro desconhecido' };
+                }
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao salvar: ' + (resultado.message || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Erro de conexão.');
+            } finally {
+                btn.innerHTML = textoOriginal;
+                btn.disabled = false;
+            }
+        }
+
+        // Fechar ao clicar fora
+        document.getElementById('modalFornecedor').addEventListener('click', function(e) {
+            if (e.target === this) fecharModal();
+        });
+
+        // Função para excluir fornecedor
+        async function excluirFornecedor(fornecedorId, fornecedorNome) {
+            if (!confirm(`Tem certeza que deseja excluir o fornecedor "${fornecedorNome}"?\n\nEsta ação não pode ser desfeita.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/fornecedores/${fornecedorId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                let resultado = {};
+                try {
+                    resultado = await response.json();
+                } catch (e) {
+                    const text = await response.text();
+                    resultado = { message: text || 'Erro desconhecido' };
+                }
+
+                if (response.ok) {
+                    // Sucesso: Recarrega a página
+                    window.location.reload();
+                } else {
+                    alert('Erro ao excluir o fornecedor: ' + (resultado.message || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro de conexão com o servidor.');
+            }
+        }
+    </script>
+</body>
+</html>

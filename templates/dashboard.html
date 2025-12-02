@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Estoque - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f5f5f5; 
+        }
+        .card-shadow {
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .number-format {
+            letter-spacing: -0.02em;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="box" class="w-7 h-7 text-blue-600"></i>
+                    <div>
+                        <h1 class="text-lg font-semibold text-gray-900">Gestão de Estoque</h1>
+                        <p class="text-xs text-gray-500">Sistema Inteligente de Capas</p>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-1 text-sm font-medium">
+                    <a href="/" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Dashboard</a>
+                    <a href="/produtos" class="text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition">Produtos</a>
+                    <a href="/fornecedores" class="text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition">Fornecedores</a>
+                    <a href="/reparos" class="text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition">Peças</a>
+                    <a href="/financas" class="text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition">Finanças</a>
+                    <a href="/movimentacoes" class="text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition">Movimentações</a>
+                    <a href="/configuracoes" class="text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition flex items-center justify-center" title="Configurações">
+                        <i data-lucide="settings" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-8 max-w-7xl">
+        
+        <!-- Header Section -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-1">Dashboard de Estoque</h2>
+            <p class="text-gray-600 text-sm">visão completa do seu negócio em tempo real</p>
+        </div>
+
+        <!-- Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+            
+            <!-- Total de SKUs -->
+            <div class="bg-white p-6 rounded-xl card-shadow">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Total de SKUs</p>
+                        <h3 class="text-3xl font-bold text-gray-900 number-format">{{ dados.total_skus }}</h3>
+                    </div>
+                    <div class="p-3 bg-blue-50 rounded-xl">
+                        <i data-lucide="package" class="w-6 h-6 text-blue-600"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-green-600 font-medium">{{ dados.percentual_estoque }}% em estoque</p>
+            </div>
+
+            <!-- Valor em Estoque -->
+            <div class="bg-white p-6 rounded-xl card-shadow">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Valor em Estoque</p>
+                        <h3 class="text-3xl font-bold text-gray-900 number-format">{{ dados.valor_estoque }}</h3>
+                    </div>
+                    <div class="p-3 bg-green-50 rounded-xl">
+                        <i data-lucide="dollar-sign" class="w-6 h-6 text-green-600"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500">Valor de venda</p>
+            </div>
+
+            <!-- Lucro Potencial -->
+            <div class="bg-white p-6 rounded-xl card-shadow">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Lucro Potencial</p>
+                        <h3 class="text-3xl font-bold text-gray-900 number-format">{{ dados.lucro_potencial }}</h3>
+                    </div>
+                    <div class="p-3 bg-emerald-50 rounded-xl">
+                        <i data-lucide="trending-up" class="w-6 h-6 text-emerald-600"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-emerald-600 font-medium">
+                    {% if dados.margem_media != "0" %}+{{ dados.margem_media }}% margem média{% else %}0% margem média{% endif %}
+                </p>
+            </div>
+
+            <!-- Alertas Críticos -->
+            <div class="bg-white p-6 rounded-xl card-shadow">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Alertas Críticos</p>
+                        <h3 class="text-3xl font-bold text-red-600 number-format">{{ dados.alertas_criticos }}</h3>
+                    </div>
+                    <div class="p-3 bg-red-50 rounded-xl">
+                        <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-red-600 font-medium">Reposição urgente</p>
+            </div>
+        </div>
+
+        <!-- Status and Alerts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+            
+            <!-- Status do Estoque -->
+            <div class="bg-white p-6 rounded-xl card-shadow">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6">Status do Estoque</h3>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                            <span class="text-sm font-medium text-gray-700">Crítico (abaixo do mínimo)</span>
+                        </div>
+                        <span class="text-xl font-bold text-red-600">{{ dados.qtd_criticos }}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-amber-50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                            <span class="text-sm font-medium text-gray-700">Baixo (quase no mínimo)</span>
+                        </div>
+                        <span class="text-xl font-bold text-amber-600">{{ dados.qtd_baixos }}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full bg-gray-500"></span>
+                            <span class="text-sm font-medium text-gray-700">Zerado</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-600">{{ dados.qtd_zerados }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alertas Urgentes -->
+            <div class="bg-white p-6 rounded-xl card-shadow">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6">Alertas Urgentes</h3>
+                
+                <div class="space-y-3">
+                    {% if dados.qtd_reposicao_urgente > 0 %}
+                    <div class="flex gap-3 p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
+                        <i data-lucide="alert-circle" class="text-red-600 w-5 h-5 shrink-0 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-gray-900">{{ dados.qtd_reposicao_urgente }} produtos precisam de reposição urgente! Estoque acabará nos próximos 3 dias</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if dados.qtd_produtos_parados > 0 %}
+                    <div class="flex gap-3 p-4 bg-amber-50 rounded-lg border-l-4 border-amber-500">
+                        <i data-lucide="alert-triangle" class="text-amber-600 w-5 h-5 shrink-0 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-gray-900">{{ dados.qtd_produtos_parados }} produtos parados há mais de 60 dias</p>
+                            <p class="text-xs text-gray-600 mt-1">Considere fazer uma promoção</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if dados.percentual_aumento_top5 > 0 %}
+                    <div class="flex gap-3 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                        <i data-lucide="trending-up" class="text-blue-600 w-5 h-5 shrink-0 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-gray-900">Top 5 produtos venderam {{ dados.percentual_aumento_top5 }}% mais esta semana</p>
+                            <p class="text-xs text-gray-600 mt-1">Considere aumentar o estoque</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if dados.qtd_reposicao_urgente == 0 and dados.qtd_produtos_parados == 0 and dados.percentual_aumento_top5 == 0 %}
+                    <div class="text-center py-8 text-gray-500 text-sm">
+                        Nenhum alerta no momento.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+        <!-- Cards de Produtos Críticos -->
+        <div class="mb-8">
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-gray-900 text-center">Produtos com Estoque Crítico</h3>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4">
+                {% if produtos_criticos %}
+                <div class="grid grid-cols-1 gap-8 mb-6">
+                    {% for item in produtos_criticos %}
+                    <div class="bg-white rounded-xl card-shadow p-8 border-l-4 {{ 'border-red-500' if item.status == 'Crítico' else 'border-amber-500' }} hover:shadow-lg transition-shadow w-full"
+                         data-produto-critico
+                         data-produto="{{ item.produto }}"
+                         data-cor="{{ item.cor }}"
+                         data-estoque="{{ item.estoque }}"
+                         data-minimo="{{ item.minimo }}">
+                        <div class="flex items-start justify-between mb-6">
+                            <div class="flex-1">
+                                <h4 class="text-xl font-bold text-gray-900 mb-2">{{ item.produto }}</h4>
+                                <p class="text-base text-gray-500 font-mono mb-2">{{ item.sku }}</p>
+                            </div>
+                            {% if item.status == 'Crítico' %}
+                                <span class="inline-flex px-4 py-2 text-sm font-semibold text-red-700 bg-red-100 rounded-full">
+                                    Crítico
+                                </span>
+                            {% else %}
+                                <span class="inline-flex px-4 py-2 text-sm font-semibold text-amber-700 bg-amber-100 rounded-full">
+                                    Baixo
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="palette" class="w-5 h-5 text-gray-400"></i>
+                                <span class="text-base text-gray-600">Cor: <span class="font-medium text-gray-900">{{ item.cor }}</span></span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-2">Estoque Atual</p>
+                                    <p class="text-3xl font-bold {{ 'text-red-600' if item.estoque < item.minimo else 'text-amber-600' }}">
+                                        {{ item.estoque }}
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm text-gray-500 mb-2">Mínimo</p>
+                                    <p class="text-2xl font-semibold text-gray-700">{{ item.minimo }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4 border-t border-gray-200 space-y-3">
+                                <select id="fornecedor_{{ loop.index0 }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
+                                    <option value="">Selecione um fornecedor (opcional)</option>
+                                    {% for fornecedor in fornecedores %}
+                                    <option value="{{ fornecedor.id }}">{{ fornecedor.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button onclick="gerarMensagemFornecedor({{ loop.index0 }})" class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium shadow-md transition transform hover:scale-105">
+                                    <i data-lucide="message-square" class="w-5 h-5"></i>
+                                    Solicitar Capas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center">
+                    <a href="/produtos" class="inline-flex items-center gap-2 text-sm text-blue-600 font-medium hover:text-blue-800 transition">
+                        Ver todos os produtos
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </a>
+                </div>
+                {% else %}
+                <div class="bg-white rounded-xl card-shadow p-12 text-center">
+                    <div class="inline-block p-4 rounded-full bg-green-50 mb-4">
+                        <i data-lucide="check-circle" class="w-10 h-10 text-green-500"></i>
+                    </div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Nenhum produto com estoque crítico</h4>
+                    <p class="text-gray-500 text-sm">Todos os produtos estão com estoque adequado.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Cards de Todos os Produtos Cadastrados -->
+        <div>
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-gray-900 text-center">Produtos Cadastrados</h3>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4">
+                {% if todos_produtos %}
+                <div class="grid grid-cols-1 gap-8 mb-6">
+                    {% for produto in todos_produtos %}
+                    <div class="bg-white rounded-xl card-shadow p-8 border border-gray-100 hover:shadow-lg transition-shadow w-full">
+                        <div class="flex items-start justify-between mb-6">
+                            <div class="flex-1">
+                                <h4 class="text-xl font-bold text-gray-900 mb-3">{{ produto.nome }}</h4>
+                                <span class="inline-flex px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 rounded-md">
+                                    {{ produto.categoria }}
+                                </span>
+                            </div>
+                            <div class="w-16 h-16 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                                <i data-lucide="package" class="w-8 h-8"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4 mb-6">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="building-2" class="w-5 h-5 text-gray-400"></i>
+                                <span class="text-base text-gray-600">Fabricante: <span class="font-medium text-gray-900">{{ produto.fabricante }}</span></span>
+                            </div>
+                            
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="layers" class="w-5 h-5 text-gray-400"></i>
+                                <span class="text-base text-gray-600">{{ produto.total_variacoes }} variação{{ 'ões' if produto.total_variacoes != 1 else '' }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="pt-5 border-t border-gray-100">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm text-gray-500">Estoque Total</span>
+                                <span class="text-xl font-bold {{ 'text-red-600' if produto.estoque_total == 0 else 'text-emerald-600' }}">
+                                    {{ produto.estoque_total }} un
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">Preço Base</span>
+                                <span class="text-2xl font-bold text-gray-900">
+                                    R$ {{ "%.2f"|format(produto.preco_base) if produto.preco_base > 0 else '0.00' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center">
+                    <a href="/produtos" class="inline-flex items-center gap-2 text-sm text-blue-600 font-medium hover:text-blue-800 transition">
+                        Gerenciar produtos
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </a>
+                </div>
+                {% else %}
+                <div class="bg-white rounded-xl card-shadow p-12 text-center">
+                    <div class="inline-block p-4 rounded-full bg-blue-50 mb-4">
+                        <i data-lucide="package" class="w-10 h-10 text-blue-400"></i>
+                    </div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Nenhum produto cadastrado ainda</h4>
+                    <p class="text-gray-500 text-sm mb-4">Comece cadastrando seus produtos.</p>
+                    <a href="/produtos" class="inline-flex items-center gap-2 text-sm text-blue-600 font-medium hover:text-blue-800 transition">
+                        Cadastrar primeiro produto
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white mt-12">
+        <div class="container mx-auto px-6 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <i data-lucide="box" class="w-6 h-6 text-blue-400"></i>
+                        <h3 class="text-lg font-bold">Gestão de Estoque</h3>
+                    </div>
+                    <p class="text-gray-400 text-sm">
+                        Sistema inteligente para gerenciamento de produtos e controle de estoque.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="text-sm font-semibold uppercase tracking-wider mb-4 text-gray-400">Links Rápidos</h4>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="/" class="text-gray-300 hover:text-white transition text-sm">Dashboard</a>
+                        </li>
+                        <li>
+                            <a href="/produtos" class="text-gray-300 hover:text-white transition text-sm">Produtos</a>
+                        </li>
+                        <li>
+                            <a href="/fornecedores" class="text-gray-300 hover:text-white transition text-sm">Fornecedores</a>
+                        </li>
+                        <li>
+                            <a href="/movimentacoes" class="text-gray-300 hover:text-white transition text-sm">Movimentações</a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-sm font-semibold uppercase tracking-wider mb-4 text-gray-400">Informações</h4>
+                    <ul class="space-y-2 text-gray-300 text-sm">
+                        <li class="flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            <span>© 2024 Gestão de Estoque</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i data-lucide="shield" class="w-4 h-4"></i>
+                            <span>Sistema seguro e confiável</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-6 text-center">
+                <p class="text-gray-400 text-sm">
+                    Desenvolvido com <i data-lucide="heart" class="w-4 h-4 inline text-red-500"></i> para gestão eficiente
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // Função para gerar mensagem para o fornecedor
+        async function gerarMensagemFornecedor(cardIndex) {
+            // Obtém o fornecedor selecionado
+            const selectFornecedor = document.getElementById(`fornecedor_${cardIndex}`);
+            const fornecedorId = selectFornecedor ? selectFornecedor.value : null;
+            
+            // Busca a configuração personalizada
+            let templateMensagem = 'Olá! Preciso dos seguintes itens:\n\n{itens}\n\nAguardo retorno. Obrigado!';
+            
+            try {
+                if (fornecedorId) {
+                    // Busca mensagem específica do fornecedor
+                    // A API já faz fallback automático para a mensagem padrão se não houver específica
+                    const response = await fetch(`/api/configuracoes/fornecedor/${fornecedorId}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        // A API sempre retorna uma mensagem (específica do fornecedor ou padrão como fallback)
+                        if (data.mensagem) {
+                            templateMensagem = data.mensagem;
+                        }
+                    }
+                }
+                
+                // Se não há fornecedor selecionado, busca mensagem padrão diretamente
+                if (!fornecedorId) {
+                    const response = await fetch('/api/configuracoes');
+                    if (response.ok) {
+                        const config = await response.json();
+                        if (config.mensagem_fornecedor) {
+                            templateMensagem = config.mensagem_fornecedor;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('Não foi possível carregar configurações personalizadas, usando padrão');
+            }
+
+            // Coleta os dados do produto crítico específico do card
+            const produtosCriticos = [];
+            const cards = document.querySelectorAll('[data-produto-critico]');
+            const cardAtual = cards[cardIndex];
+            
+            if (cardAtual) {
+                const produto = cardAtual.getAttribute('data-produto');
+                const cor = cardAtual.getAttribute('data-cor');
+                const estoque = parseInt(cardAtual.getAttribute('data-estoque')) || 0;
+                const minimo = parseInt(cardAtual.getAttribute('data-minimo')) || 0;
+                
+                // Calcula a quantidade necessária para atingir o mínimo
+                // Se o estoque está abaixo do mínimo, precisa de (mínimo - estoque)
+                // Mas vamos pedir um pouco mais para ter margem de segurança
+                let quantidadeNecessaria = minimo - estoque;
+                
+                // Se o estoque está zerado ou muito baixo, pede pelo menos o mínimo
+                if (estoque === 0 || quantidadeNecessaria < minimo) {
+                    quantidadeNecessaria = minimo;
+                }
+                
+                if (quantidadeNecessaria > 0) {
+                    produtosCriticos.push({
+                        produto: produto,
+                        cor: cor,
+                        quantidade: quantidadeNecessaria
+                    });
+                }
+            }
+
+            if (produtosCriticos.length === 0) {
+                alert('Não há produtos com estoque crítico que precisem de reposição.');
+                return;
+            }
+
+            // Mostra modal para editar quantidades
+            mostrarModalEditarQuantidades(produtosCriticos, templateMensagem);
+        }
+
+        // Variáveis globais para armazenar dados do modal de edição
+        let produtosCriticosEditaveis = [];
+        let templateMensagemEditavel = '';
+
+        // Função para mostrar modal de edição de quantidades
+        function mostrarModalEditarQuantidades(produtosCriticos, templateMensagem) {
+            // Armazena os dados globalmente
+            produtosCriticosEditaveis = produtosCriticos;
+            templateMensagemEditavel = templateMensagem;
+            
+            // Cria o modal
+            const modal = document.createElement('div');
+            modal.id = 'modalEditarQuantidades';
+            modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm';
+            
+            let produtosHTML = '';
+            produtosCriticos.forEach((item, index) => {
+                produtosHTML += `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">${item.cor} de ${item.produto}</p>
+                            <p class="text-xs text-gray-500">Quantidade sugerida: ${item.quantidade}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="alterarQuantidade(${index}, -1)" class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-lg transition">
+                                <i data-lucide="minus" class="w-4 h-4"></i>
+                            </button>
+                            <input type="number" id="qtd_${index}" min="0" value="${item.quantidade}" class="w-16 px-2 py-1 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                            <button type="button" onclick="alterarQuantidade(${index}, 1)" class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-lg transition">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 transform transition-all">
+                    <div class="flex justify-between items-center p-6 border-b border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <i data-lucide="edit" class="w-5 h-5 text-blue-600"></i>
+                            Editar Quantidades
+                        </h3>
+                        <button onclick="fecharModalEditarQuantidades()" class="text-gray-400 hover:text-red-500 transition p-1 hover:bg-red-50 rounded-full">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 mb-4">Ajuste as quantidades desejadas para cada item:</p>
+                        <div id="listaProdutosEdicao" class="mb-4">
+                            ${produtosHTML}
+                        </div>
+                        <div class="mt-4 flex justify-end gap-3">
+                            <button onclick="fecharModalEditarQuantidades()" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition">
+                                Cancelar
+                            </button>
+                            <button onclick="gerarMensagemComQuantidades()" class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition">
+                                Gerar e Copiar Mensagem
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            lucide.createIcons();
+            
+            // Fecha ao clicar fora
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    fecharModalEditarQuantidades();
+                }
+            });
+        }
+
+        function alterarQuantidade(index, delta) {
+            const input = document.getElementById(`qtd_${index}`);
+            const valorAtual = parseInt(input.value) || 0;
+            const novoValor = Math.max(0, valorAtual + delta);
+            input.value = novoValor;
+        }
+
+        function fecharModalEditarQuantidades() {
+            const modal = document.getElementById('modalEditarQuantidades');
+            if (modal) {
+                modal.remove();
+            }
+            // Limpa as variáveis globais
+            produtosCriticosEditaveis = [];
+            templateMensagemEditavel = '';
+        }
+
+        function gerarMensagemComQuantidades() {
+            // Coleta as quantidades editadas
+            const produtosAtualizados = produtosCriticosEditaveis.map((item, index) => {
+                const input = document.getElementById(`qtd_${index}`);
+                return {
+                    produto: item.produto,
+                    cor: item.cor,
+                    quantidade: parseInt(input.value) || 0
+                };
+            }).filter(item => item.quantidade > 0); // Remove itens com quantidade zero
+
+            if (produtosAtualizados.length === 0) {
+                alert('Por favor, defina pelo menos uma quantidade maior que zero.');
+                return;
+            }
+
+            // Gera a lista de itens
+            let listaItens = '';
+            produtosAtualizados.forEach((item, index) => {
+                // Formata de forma mais natural e coesa
+                if (produtosAtualizados.length === 1) {
+                    // Se for apenas um item, usa formato mais direto
+                    if (item.quantidade === 1) {
+                        listaItens += `Preciso de 1 unidade de ${item.produto} na cor ${item.cor}.`;
+                    } else {
+                        listaItens += `Preciso de ${item.quantidade} unidades de ${item.produto} na cor ${item.cor}.`;
+                    }
+                } else {
+                    // Se for múltiplos itens, usa lista numerada
+                    if (item.quantidade === 1) {
+                        listaItens += `${index + 1}. 1 unidade de ${item.produto} na cor ${item.cor}\n`;
+                    } else {
+                        listaItens += `${index + 1}. ${item.quantidade} unidades de ${item.produto} na cor ${item.cor}\n`;
+                    }
+                }
+            });
+
+            // Substitui {itens} no template pela lista gerada
+            const mensagem = templateMensagemEditavel.replace('{itens}', listaItens.trim());
+
+            // Fecha o modal de edição
+            fecharModalEditarQuantidades();
+
+            // Copia para a área de transferência
+            navigator.clipboard.writeText(mensagem).then(() => {
+                // Mostra um modal de sucesso
+                mostrarModalSucesso(mensagem);
+            }).catch(err => {
+                // Fallback: mostra a mensagem em um prompt
+                const textarea = document.createElement('textarea');
+                textarea.value = mensagem;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    mostrarModalSucesso(mensagem);
+                } catch (e) {
+                    alert('Mensagem gerada (copie manualmente):\n\n' + mensagem);
+                }
+                document.body.removeChild(textarea);
+            });
+        }
+
+        // Função para mostrar modal de sucesso
+        function mostrarModalSucesso(mensagem) {
+            // Cria o modal
+            const modal = document.createElement('div');
+            modal.id = 'modalMensagem';
+            modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 transform transition-all">
+                    <div class="flex justify-between items-center p-6 border-b border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+                            Mensagem Copiada!
+                        </h3>
+                        <button onclick="fecharModalMensagem()" class="text-gray-400 hover:text-red-500 transition p-1 hover:bg-red-50 rounded-full">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 mb-4">A mensagem foi copiada para a área de transferência. Cole no seu aplicativo de mensagens:</p>
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <pre class="text-sm text-gray-800 whitespace-pre-wrap font-sans">${mensagem}</pre>
+                        </div>
+                        <div class="mt-4 flex justify-end gap-3">
+                            <button onclick="copiarNovamente()" class="px-4 py-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg font-medium transition">
+                                Copiar Novamente
+                            </button>
+                            <button onclick="fecharModalMensagem()" class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition">
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            lucide.createIcons();
+            
+            // Fecha ao clicar fora
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    fecharModalMensagem();
+                }
+            });
+        }
+
+        function fecharModalMensagem() {
+            const modal = document.getElementById('modalMensagem');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function copiarNovamente() {
+            const pre = document.querySelector('#modalMensagem pre');
+            if (pre) {
+                navigator.clipboard.writeText(pre.textContent).then(() => {
+                    alert('Mensagem copiada novamente!');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

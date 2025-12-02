@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos - Gestão de Estoque</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style> 
+        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; } 
+        /* Animação suave para o modal */
+        .modal-transition { transition: opacity 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="box" class="w-8 h-8"></i>
+                    <div>
+                        <h1 class="text-xl font-bold leading-tight">Gestão de Estoque</h1>
+                        <p class="text-blue-200 text-xs">Sistema Inteligente de Capas</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex space-x-4 text-sm font-medium">
+                <a href="/" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Dashboard</a>
+                <a href="/produtos" class="bg-white/20 px-4 py-2 rounded-md transition text-white">Produtos</a>
+                <a href="/fornecedores" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Fornecedores</a>
+                <a href="/reparos" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Peças</a>
+                <a href="/financas" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Finanças</a>
+                <a href="/movimentacoes" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Movimentações</a>
+                <a href="/configuracoes" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition flex items-center justify-center" title="Configurações">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-8">
+        
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Produtos</h2>
+                <p class="text-gray-500 mt-1">Gerencie seu catálogo de capas</p>
+            </div>
+            
+            <button id="btnCadastrarProduto" onclick="abrirModal()" type="button" class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-md transition transform hover:scale-105">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+                Cadastrar Produto
+            </button>
+        </div>
+
+        <div class="space-y-6">
+            {% for produto in products %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition duration-200">
+                <div class="p-6">
+                    <div class="flex justify-between items-start">
+                        <div class="flex gap-4">
+                            <div class="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                                <i data-lucide="package" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-lg font-bold text-gray-900">{{ produto.name }}</h3>
+                                    <span class="text-xs font-mono text-gray-400">#{{ produto.id }}</span>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    Fabricante: <span class="font-medium text-gray-700">{{ produto.manufacturer }}</span>
+                                </p>
+                                <p class="text-sm text-gray-500 mt-0.5">
+                                    Compatível com: <span class="font-medium text-gray-700">{{ produto.compatibility }}</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="text-right">
+                                <p class="text-xs text-gray-400 mb-1">Preço Base</p>
+                                {% if produto.variations and produto.variations[0].variation_price is not none %}
+                                    <p class="text-2xl font-bold text-emerald-600">
+                                        R$ {{ "%.2f"|format(produto.variations[0].variation_price) }}
+                                    </p>
+                                {% else %}
+                                    <p class="text-gray-400 text-sm italic">Sem variações</p>
+                                {% endif %}
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="editarProduto({{ produto.id }})" class="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition mt-1" title="Editar produto">
+                                    <i data-lucide="edit" class="w-5 h-5"></i>
+                                </button>
+                                <button onclick="excluirProduto({{ produto.id }}, '{{ produto.name }}')" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition mt-1" title="Excluir produto">
+                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="h-px bg-gray-100 my-5"></div>
+
+                    <div>
+                        <div class="flex items-center gap-2 mb-3">
+                            <i data-lucide="palette" class="w-4 h-4 text-blue-500"></i>
+                            <h4 class="text-sm font-semibold text-gray-700">Cores Disponíveis ({{ produto.variations|length }})</h4>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {% for var in produto.variations %}
+                            <div class="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50">
+                                <div>
+                                    <p class="text-xs font-mono text-gray-400 uppercase mb-1">{{ var.full_sku }}</p>
+                                    <p class="text-sm font-bold text-gray-800">{{ var.color_name }}</p>
+                                </div>
+                                
+                                {% if var.available_stock is not none and var.min_stock_alert is not none and var.available_stock <= var.min_stock_alert %}
+                                    <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-orange-100 text-orange-700">
+                                        {{ var.available_stock }} un
+                                    </span>
+                                {% else %}
+                                    <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-100 text-emerald-700">
+                                        {{ var.available_stock if var.available_stock is not none else 0 }} un
+                                    </span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            
+                            {% if not produto.variations %}
+                            <div class="col-span-3 text-center py-4 text-sm text-gray-400 italic bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                Nenhuma variação de cor cadastrada ainda.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not products %}
+            <div class="text-center py-20 bg-white rounded-xl border border-gray-100 shadow-sm">
+                <div class="inline-block p-4 rounded-full bg-blue-50 mb-4">
+                    <i data-lucide="inbox" class="w-10 h-10 text-blue-400"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900">Nenhum produto encontrado</h3>
+                <p class="text-gray-500 mt-2">Clique no botão acima para cadastrar seu primeiro item.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="modalCadastro" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden items-center justify-center z-50 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
+            
+            <div class="flex justify-between items-center p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
+                <h3 id="modalTitulo" class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-blue-600"></i>
+                    Novo Produto
+                </h3>
+                <button onclick="fecharModal()" class="text-gray-400 hover:text-red-500 transition p-1 hover:bg-red-50 rounded-full">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <form id="formProduto" onsubmit="salvarProduto(event)" class="p-6 space-y-5">
+                <input type="hidden" id="produtoId" name="produto_id" value="">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nome do Produto</label>
+                    <input type="text" name="name" placeholder="Ex: Capa Silicone Premium" required
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Fabricante</label>
+                        <input type="text" name="manufacturer" placeholder="Ex: CapaMax" required
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Categoria</label>
+                        <select name="category" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
+                            <option value="Capas">Capas</option>
+                            <option value="Películas">Películas</option>
+                            <option value="Carregadores">Carregadores</option>
+                            <option value="Cabos">Cabos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Compatibilidade</label>
+                    <input type="text" name="compatibility" placeholder="Ex: iPhone 14, iPhone 14 Pro" required
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm">
+                    <p class="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                        <i data-lucide="info" class="w-3 h-3"></i> Separe os modelos por vírgula
+                    </p>
+                </div>
+
+                <!-- SEÇÃO DE CORES -->
+                <div class="border-t border-gray-100 pt-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="block text-sm font-semibold text-gray-700">Cores / Variações</label>
+                        <button type="button" onclick="adicionarCor()" class="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-md hover:bg-blue-100 font-medium transition flex items-center gap-1">
+                            <i data-lucide="plus" class="w-3 h-3"></i> Adicionar Cor
+                        </button>
+                    </div>
+                    
+                    <div id="listaCores" class="space-y-3">
+                        <!-- Itens de cor serão adicionados aqui via JS -->
+                    </div>
+                    
+                    <div id="semCoresMsg" class="text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-xs text-gray-400">
+                        Nenhuma cor adicionada. O produto será criado sem variações iniciais.
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3 border-t border-gray-50 mt-4">
+                    <button type="button" onclick="fecharModal()" class="px-5 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg font-medium transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium shadow-md transition flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Salvar Produto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Inicializa os ícones
+        lucide.createIcons();
+
+        // Aguarda o carregamento completo da página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Adiciona evento ao botão de cadastrar
+            const btnCadastrar = document.getElementById('btnCadastrarProduto');
+            if (btnCadastrar) {
+                btnCadastrar.addEventListener('click', abrirModal);
+            }
+        });
+
+        // Função para abrir o modal
+        function abrirModal() {
+            console.log('Abrindo modal...');
+            const modal = document.getElementById('modalCadastro');
+            if (!modal) {
+                console.error('Modal não encontrado!');
+                return;
+            }
+            // Limpa o formulário e reseta para modo criação
+            document.getElementById('formProduto').reset();
+            document.getElementById('produtoId').value = '';
+            document.getElementById('modalTitulo').innerHTML = '<i data-lucide="plus-circle" class="w-5 h-5 text-blue-600"></i> Novo Produto';
+            document.getElementById('listaCores').innerHTML = '';
+            document.getElementById('semCoresMsg').style.display = 'block';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            // Reinicializa os ícones após abrir o modal
+            lucide.createIcons();
+        }
+
+        // Função para editar produto
+        async function editarProduto(produtoId) {
+            try {
+                const response = await fetch(`/api/produtos/${produtoId}`);
+                if (!response.ok) {
+                    alert('Erro ao carregar produto');
+                    return;
+                }
+                
+                const produto = await response.json();
+                
+                // Preenche o formulário
+                document.getElementById('produtoId').value = produto.id;
+                document.querySelector('input[name="name"]').value = produto.name;
+                document.querySelector('input[name="manufacturer"]').value = produto.manufacturer || '';
+                document.querySelector('input[name="compatibility"]').value = produto.compatibility || '';
+                document.querySelector('select[name="category"]').value = produto.category || 'Capas';
+                
+                // Atualiza título do modal
+                document.getElementById('modalTitulo').innerHTML = '<i data-lucide="edit" class="w-5 h-5 text-blue-600"></i> Editar Produto';
+                
+                // Limpa e preenche as cores
+                const listaCores = document.getElementById('listaCores');
+                listaCores.innerHTML = '';
+                document.getElementById('semCoresMsg').style.display = 'none';
+                
+                produto.variations.forEach(variacao => {
+                    adicionarCorExistente(variacao);
+                });
+                
+                // Abre o modal
+                const modal = document.getElementById('modalCadastro');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao carregar produto para edição');
+            }
+        }
+
+        // Função para fechar o modal
+        function fecharModal() {
+            const modal = document.getElementById('modalCadastro');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            
+            // Limpa o formulário
+            document.getElementById('formProduto').reset();
+            document.getElementById('produtoId').value = '';
+            document.getElementById('listaCores').innerHTML = '';
+            document.getElementById('semCoresMsg').style.display = 'block';
+        }
+
+        // Função para salvar (Envia dados ao Python)
+        async function salvarProduto(event) {
+            event.preventDefault(); // Impede o recarregamento padrão
+            
+            // Botão carregando (Feedback visual)
+            const btnSubmit = event.target.querySelector('button[type="submit"]');
+            const textoOriginal = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = 'Salvando...';
+            btnSubmit.disabled = true;
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const produtoId = document.getElementById('produtoId').value;
+            
+            // Converte dados para objeto JSON
+            const dados = {
+                name: formData.get('name'),
+                manufacturer: formData.get('manufacturer'),
+                compatibility: formData.get('compatibility'),
+                category: formData.get('category'),
+                colors: obterCoresDoFormulario()
+            };
+
+            try {
+                let response;
+                if (produtoId) {
+                    // Atualiza produto existente
+                    response = await fetch(`/api/produtos/${produtoId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(dados)
+                    });
+                } else {
+                    // Cria novo produto
+                    response = await fetch('/api/produtos', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(dados)
+                    });
+                }
+
+                let resultado = {};
+                try {
+                    resultado = await response.json();
+                } catch (e) {
+                    const text = await response.text();
+                    resultado = { message: text || 'Erro desconhecido' };
+                }
+
+                if (response.ok) {
+                    // Sucesso: Recarrega a página para mostrar o novo item
+                    window.location.reload();
+                } else {
+                    alert('Erro ao salvar o produto: ' + (resultado.message || 'Verifique os dados.'));
+                    btnSubmit.innerHTML = textoOriginal;
+                    btnSubmit.disabled = false;
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro de conexão com o servidor.');
+                btnSubmit.innerHTML = textoOriginal;
+                btnSubmit.disabled = false;
+            }
+        }
+
+        // Fecha o modal se clicar fora dele (fundo escuro)
+        document.getElementById('modalCadastro').addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharModal();
+            }
+        });
+
+        // --- LÓGICA DE CORES ---
+        
+        function adicionarCor(variacao = null) {
+            const container = document.getElementById('listaCores');
+            const msgSemCores = document.getElementById('semCoresMsg');
+            
+            msgSemCores.style.display = 'none';
+            
+            const id = variacao ? variacao.id : Date.now(); // ID da variação existente ou temporário
+            const isExistente = !!variacao;
+            
+            const html = `
+                <div id="cor-${id}" class="flex gap-3 items-start bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition">
+                    <input type="hidden" class="cor-id" value="${variacao ? variacao.id : ''}">
+                    <div class="flex-1 space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Nome da Cor *</label>
+                                <input type="text" placeholder="Ex: Preto Fosco" class="cor-nome w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" value="${variacao ? variacao.color_name : ''}" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">SKU (opcional)</label>
+                                <input type="text" placeholder="Ex: CAP-SIL-IP14-BLK" class="cor-sku w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" value="${variacao ? variacao.full_sku : ''}">
+                                <p class="text-xs text-gray-400 mt-1">Deixe vazio para gerar automaticamente</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div class="relative">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Preço de Venda *</label>
+                                <span class="absolute left-3 top-8 text-gray-400 text-xs">R$</span>
+                                <input type="number" step="0.01" min="0" placeholder="0.00" class="cor-preco w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" value="${variacao ? variacao.variation_price : ''}" required>
+                            </div>
+                            <div class="relative">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Custo de Compra *</label>
+                                <span class="absolute left-3 top-8 text-gray-400 text-xs">R$</span>
+                                <input type="number" step="0.01" min="0" placeholder="0.00" class="cor-custo w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" value="${variacao ? (variacao.cost_price || 0) : ''}" required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Estoque Inicial *</label>
+                                <input type="number" min="0" placeholder="0" class="cor-estoque w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" value="${variacao ? variacao.available_stock : ''}" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Estoque Mínimo</label>
+                                <input type="number" min="0" placeholder="10" class="cor-minimo w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" value="${variacao ? variacao.min_stock_alert : '10'}">
+                                <p class="text-xs text-gray-400 mt-1">Alerta quando atingir</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="removerCor('${id}')" class="text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-md transition mt-6" title="Remover cor">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', html);
+            lucide.createIcons();
+        }
+
+        // Função para adicionar cor existente (usada na edição)
+        function adicionarCorExistente(variacao) {
+            adicionarCor(variacao);
+        }
+
+        function removerCor(id) {
+            const elemento = document.getElementById(`cor-${id}`);
+            if (elemento) {
+                elemento.remove();
+            }
+            
+            const container = document.getElementById('listaCores');
+            if (container.children.length === 0) {
+                document.getElementById('semCoresMsg').style.display = 'block';
+            }
+        }
+
+        function obterCoresDoFormulario() {
+            const cores = [];
+            const itens = document.querySelectorAll('#listaCores > div');
+            
+            itens.forEach(item => {
+                const corId = item.querySelector('.cor-id')?.value;
+                const nome = item.querySelector('.cor-nome')?.value?.trim();
+                const preco = item.querySelector('.cor-preco')?.value;
+                const custo = item.querySelector('.cor-custo')?.value;
+                const estoque = item.querySelector('.cor-estoque')?.value;
+                const sku = item.querySelector('.cor-sku')?.value?.trim();
+                const minimo = item.querySelector('.cor-minimo')?.value;
+                
+                // Validação: nome, preço, custo e estoque são obrigatórios
+                if (nome && preco && custo !== null && custo !== '' && estoque) {
+                    const corData = {
+                        color_name: nome,
+                        price: parseFloat(preco) || 0,
+                        cost: parseFloat(custo) || 0,
+                        stock: parseInt(estoque) || 0
+                    };
+                    
+                    // Se tem ID, é uma cor existente sendo editada
+                    if (corId) {
+                        corData.id = parseInt(corId);
+                    }
+                    
+                    // Adiciona SKU se fornecido
+                    if (sku) {
+                        corData.full_sku = sku;
+                    }
+                    
+                    // Adiciona estoque mínimo se fornecido
+                    if (minimo) {
+                        corData.min_stock_alert = parseInt(minimo) || 10;
+                    } else {
+                        corData.min_stock_alert = 10; // Valor padrão
+                    }
+                    
+                    cores.push(corData);
+                }
+            });
+            
+            return cores;
+        }
+
+        // Função para excluir produto
+        async function excluirProduto(produtoId, produtoNome) {
+            if (!confirm(`Tem certeza que deseja excluir o produto "${produtoNome}"?\n\nEsta ação não pode ser desfeita e excluirá todas as variações e movimentações relacionadas.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/produtos/${produtoId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                let resultado = {};
+                try {
+                    resultado = await response.json();
+                } catch (e) {
+                    const text = await response.text();
+                    resultado = { message: text || 'Erro desconhecido' };
+                }
+
+                if (response.ok) {
+                    // Sucesso: Recarrega a página
+                    window.location.reload();
+                } else {
+                    alert('Erro ao excluir o produto: ' + (resultado.message || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro de conexão com o servidor.');
+            }
+        }
+    </script>
+</body>
+</html>
