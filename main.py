@@ -1203,9 +1203,9 @@ async def reparos_page(request: Request, db: Session = Depends(get_db)):
         pecas_disponiveis = []
     
     return templates.TemplateResponse(
-        request=request,
-        name="reparos.html",
-        context={
+        request,
+        "reparos.html",
+        {
             "pecas": pecas,
             "servicos": servicos,
             "pecas_disponiveis": pecas_disponiveis
