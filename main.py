@@ -1569,9 +1569,9 @@ async def ordens_servico_page(request: Request, db: Session = Depends(get_db)):
     """Página de gerenciamento de ordens de serviço"""
     if not can_use_database(db):
         return templates.TemplateResponse(
-            request=request,
-            name="ordens_servico.html",
-            context={
+            request,
+            "ordens_servico.html",
+            {
                 "ordens": [],
                 "pecas": []
             }
@@ -1591,9 +1591,9 @@ async def ordens_servico_page(request: Request, db: Session = Depends(get_db)):
         pecas = []
     
     return templates.TemplateResponse(
-        request=request,
-        name="ordens_servico.html",
-        context={
+        request,
+        "ordens_servico.html",
+        {
             "ordens": ordens,
             "pecas": pecas
         }
