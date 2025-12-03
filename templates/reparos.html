@@ -118,11 +118,7 @@
                                         <div>
                                             <p class="text-xs text-gray-400 mb-1">Data de Cadastro</p>
                                             <p class="text-sm font-medium text-gray-600">
-                                                {% if peca.created_at %}
-                                                    {{ peca.created_at.strftime('%d/%m/%Y %H:%M') if hasattr(peca.created_at, 'strftime') else (peca.created_at[:16] if isinstance(peca.created_at, str) else 'N/A') }}
-                                                {% else %}
-                                                    N/A
-                                                {% endif %}
+                                                {{ peca.created_at | formatar_data }}
                                             </p>
                                         </div>
                                     </div>
@@ -195,11 +191,7 @@
                                         <div>
                                             <p class="text-xs text-gray-400 mb-1">Data de Cadastro</p>
                                             <p class="text-sm font-medium text-gray-600">
-                                                {% if servico.created_at %}
-                                                    {{ servico.created_at.strftime('%d/%m/%Y %H:%M') if hasattr(servico.created_at, 'strftime') else (servico.created_at[:16] if isinstance(servico.created_at, str) else 'N/A') }}
-                                                {% else %}
-                                                    N/A
-                                                {% endif %}
+                                                {{ servico.created_at | formatar_data }}
                                             </p>
                                         </div>
                                     </div>
@@ -298,22 +290,14 @@
                                         <div>
                                             <p class="text-xs text-gray-400 mb-1">Data de Criação</p>
                                             <p class="text-sm font-medium text-gray-600">
-                                                {% if ordem.created_at %}
-                                                    {{ ordem.created_at.strftime('%d/%m/%Y %H:%M') if hasattr(ordem.created_at, 'strftime') else (ordem.created_at[:16] if isinstance(ordem.created_at, str) else ordem.created_at) }}
-                                                {% else %}
-                                                    N/A
-                                                {% endif %}
+                                                {{ ordem.created_at | formatar_data }}
                                             </p>
                                         </div>
                                         {% if ordem.completed_at %}
                                         <div>
                                             <p class="text-xs text-gray-400 mb-1">Data de Conclusão</p>
                                             <p class="text-sm font-medium text-green-600">
-                                                {% if ordem.completed_at is string %}
-                                                    {{ ordem.completed_at[:16] }}
-                                                {% else %}
-                                                    {{ ordem.completed_at.strftime('%d/%m/%Y %H:%M') if hasattr(ordem.completed_at, 'strftime') else ordem.completed_at }}
-                                                {% endif %}
+                                                {{ ordem.completed_at | formatar_data }}
                                             </p>
                                         </div>
                                         {% endif %}

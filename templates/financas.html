@@ -144,15 +144,7 @@
                                         <div>
                                             <p class="text-xs text-gray-400 mb-1">Data da Compra</p>
                                             <p class="text-sm font-medium text-gray-900">
-                                                {% if purchase.created_at %}
-                                                    {% if purchase.created_at is string %}
-                                                        {{ purchase.created_at[:10] }}
-                                                    {% else %}
-                                                        {{ purchase.created_at.strftime('%d/%m/%Y %H:%M') if hasattr(purchase.created_at, 'strftime') else purchase.created_at }}
-                                                    {% endif %}
-                                                {% else %}
-                                                    N/A
-                                                {% endif %}
+                                                {{ purchase.created_at | formatar_data }}
                                             </p>
                                         </div>
                                     </div>
@@ -275,26 +267,14 @@
                                         <div>
                                             <p class="text-xs text-gray-400 mb-1">Data de Criação</p>
                                             <p class="text-sm font-medium text-gray-600">
-                                                {% if order.created_at %}
-                                                    {% if order.created_at is string %}
-                                                        {{ order.created_at[:16] }}
-                                                    {% else %}
-                                                        {{ order.created_at.strftime('%d/%m/%Y %H:%M') if hasattr(order.created_at, 'strftime') else order.created_at }}
-                                                    {% endif %}
-                                                {% else %}
-                                                    N/A
-                                                {% endif %}
+                                                {{ order.created_at | formatar_data }}
                                             </p>
                                         </div>
                                         {% if order.completed_at %}
                                         <div>
                                             <p class="text-xs text-gray-400 mb-1">Data de Conclusão</p>
                                             <p class="text-sm font-medium text-green-600">
-                                                {% if order.completed_at is string %}
-                                                    {{ order.completed_at[:16] }}
-                                                {% else %}
-                                                    {{ order.completed_at.strftime('%d/%m/%Y %H:%M') if hasattr(order.completed_at, 'strftime') else order.completed_at }}
-                                                {% endif %}
+                                                {{ order.completed_at | formatar_data }}
                                             </p>
                                         </div>
                                         {% endif %}

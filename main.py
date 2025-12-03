@@ -69,6 +69,34 @@ app = FastAPI(title="Sistema de Gestão de Estoque")
 
 templates = Jinja2Templates(directory="templates")
 
+# Filtro customizado para formatar datas no Jinja2
+def formatar_data(data):
+    """Formata uma data para exibição no template"""
+    if data is None:
+        return 'N/A'
+    
+    # Se for string, tenta extrair a parte da data
+    if isinstance(data, str):
+        try:
+            # Tenta pegar os primeiros 16 caracteres (formato ISO: YYYY-MM-DDTHH:MM)
+            if len(data) >= 16:
+                return data[:16].replace('T', ' ')
+            return data
+        except:
+            return data
+    
+    # Se for datetime, formata
+    try:
+        if hasattr(data, 'strftime'):
+            return data.strftime('%d/%m/%Y %H:%M')
+    except:
+        pass
+    
+    return str(data)
+
+# Registra o filtro no Jinja2
+templates.env.filters['formatar_data'] = formatar_data
+
 # Arquivo de configurações
 CONFIG_FILE = "config.json"
 
