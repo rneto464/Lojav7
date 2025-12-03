@@ -77,10 +77,38 @@
 
         <!-- Conteúdo: Catálogo de Peças -->
         <div id="conteudo-pecas" class="aba-conteudo">
-            <div class="space-y-4">
+            <!-- Filtro de Busca por Modelo -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+                <div class="flex items-center gap-4">
+                    <div class="flex-1 relative">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Pesquisar por Modelo de Celular</label>
+                        <div class="relative">
+                            <i data-lucide="smartphone" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                            <input type="text" id="filtroModeloPeca" placeholder="Ex: A22, iPhone 14, Samsung S21..." 
+                                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm">
+                        </div>
+                    </div>
+                    <div class="pt-6">
+                        <button type="button" id="limparFiltroPeca" onclick="limparFiltroPeca()" 
+                            class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium">
+                            <i data-lucide="x-circle" class="w-4 h-4"></i>
+                            Limpar
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <p class="text-sm text-gray-600">
+                        Mostrando <span id="contadorPecas" class="font-semibold text-blue-600">{{ pecas|length if pecas else 0 }}</span> 
+                        de <span class="font-semibold text-gray-700">{{ pecas|length if pecas else 0 }}</span> peças
+                    </p>
+                </div>
+            </div>
+
+            <div class="space-y-4" id="listaPecasContainer">
                 {% if pecas %}
                     {% for peca in pecas %}
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+                    <div class="peca-card bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition" 
+                         data-modelo="{{ (peca.device_model or '')|lower }}">
                         <div class="flex justify-between items-start">
                             <div class="flex gap-4 flex-1">
                                 <div class="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
@@ -136,7 +164,7 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center" id="mensagemVaziaPecas">
                         <div class="inline-block p-4 rounded-full bg-orange-50 mb-4">
                             <i data-lucide="package" class="w-10 h-10 text-orange-500"></i>
                         </div>
@@ -144,6 +172,13 @@
                         <p class="text-gray-500 text-sm">Comece cadastrando peças físicas no catálogo.</p>
                     </div>
                 {% endif %}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center hidden" id="mensagemSemResultadosPecas">
+                    <div class="inline-block p-4 rounded-full bg-orange-50 mb-4">
+                        <i data-lucide="search-x" class="w-10 h-10 text-orange-500"></i>
+                    </div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Nenhuma peça encontrada</h4>
+                    <p class="text-gray-500 text-sm">Tente ajustar o filtro de busca.</p>
+                </div>
             </div>
         </div>
 
@@ -454,6 +489,70 @@
         lucide.createIcons();
 
         let abaAtiva = 'pecas';
+        const totalPecas = {{ pecas|length if pecas else 0 }};
+
+        // ===== FILTRO DE BUSCA POR MODELO (PEÇAS) =====
+        const filtroModeloPeca = document.getElementById('filtroModeloPeca');
+        const contadorPecas = document.getElementById('contadorPecas');
+        const mensagemSemResultadosPecas = document.getElementById('mensagemSemResultadosPecas');
+        const mensagemVaziaPecas = document.getElementById('mensagemVaziaPecas');
+
+        // Função para filtrar peças por modelo
+        function filtrarPecas() {
+            if (!filtroModeloPeca) return;
+            
+            const termoModelo = filtroModeloPeca.value.toLowerCase().trim();
+            
+            const pecas = document.querySelectorAll('.peca-card');
+            let pecasVisiveis = 0;
+            
+            pecas.forEach(peca => {
+                const modelo = peca.getAttribute('data-modelo') || '';
+                
+                const correspondeModelo = !termoModelo || modelo.includes(termoModelo);
+                
+                if (correspondeModelo) {
+                    peca.style.display = '';
+                    pecasVisiveis++;
+                } else {
+                    peca.style.display = 'none';
+                }
+            });
+            
+            // Atualiza contador
+            if (contadorPecas) {
+                contadorPecas.textContent = pecasVisiveis;
+            }
+            
+            // Mostra/oculta mensagens
+            if (mensagemSemResultadosPecas) {
+                if (pecasVisiveis === 0 && totalPecas > 0) {
+                    mensagemSemResultadosPecas.classList.remove('hidden');
+                    if (mensagemVaziaPecas) {
+                        mensagemVaziaPecas.classList.add('hidden');
+                    }
+                } else {
+                    mensagemSemResultadosPecas.classList.add('hidden');
+                    if (mensagemVaziaPecas && totalPecas === 0) {
+                        mensagemVaziaPecas.classList.remove('hidden');
+                    }
+                }
+            }
+        }
+
+        // Função para limpar filtro
+        function limparFiltroPeca() {
+            if (filtroModeloPeca) {
+                filtroModeloPeca.value = '';
+                filtrarPecas();
+                filtroModeloPeca.focus();
+            }
+        }
+
+        // Event listener para o filtro
+        if (filtroModeloPeca) {
+            filtroModeloPeca.addEventListener('input', filtrarPecas);
+        }
 
         function mostrarAba(aba) {
             abaAtiva = aba;
