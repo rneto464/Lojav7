@@ -57,7 +57,7 @@
 
         <!-- Filtros de Busca -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <!-- Barra de Pesquisa por Nome -->
                 <div class="relative">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Pesquisar por Nome</label>
@@ -65,9 +65,16 @@
                         <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"></i>
                         <input type="text" id="filtroNome" placeholder="Digite o nome do produto..." 
                             class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm">
-                        <button type="button" id="limparBusca" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">
-                            <i data-lucide="x" class="w-5 h-5"></i>
-                        </button>
+                    </div>
+                </div>
+                
+                <!-- Barra de Pesquisa por Modelo -->
+                <div class="relative">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Pesquisar por Modelo</label>
+                    <div class="relative">
+                        <i data-lucide="smartphone" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                        <input type="text" id="filtroModelo" placeholder="Ex: A22, iPhone 14..." 
+                            class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm">
                     </div>
                 </div>
                 
@@ -85,6 +92,15 @@
                 </div>
             </div>
             
+            <!-- Botão Limpar Filtros -->
+            <div class="mt-4 flex justify-end">
+                <button type="button" id="limparFiltros" onclick="limparTodosFiltros()" 
+                    class="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium">
+                    <i data-lucide="x-circle" class="w-4 h-4"></i>
+                    Limpar Filtros
+                </button>
+            </div>
+            
             <!-- Contador de Resultados -->
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <p class="text-sm text-gray-600">
@@ -98,7 +114,8 @@
             {% for produto in products %}
             <div class="produto-card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition duration-200" 
                  data-nome="{{ produto.name|lower }}" 
-                 data-categoria="{{ produto.category or 'Capas' }}">
+                 data-categoria="{{ produto.category or 'Capas' }}"
+                 data-compatibilidade="{{ (produto.compatibility or '')|lower }}">
                 <div class="p-6">
                     <div class="flex justify-between items-start">
                         <div class="flex gap-4">
@@ -289,8 +306,8 @@
 
         // ===== FILTROS DE BUSCA =====
         const filtroNome = document.getElementById('filtroNome');
+        const filtroModelo = document.getElementById('filtroModelo');
         const filtroCategoria = document.getElementById('filtroCategoria');
-        const limparBusca = document.getElementById('limparBusca');
         const contadorResultados = document.getElementById('contadorResultados');
         const mensagemSemResultados = document.getElementById('mensagemSemResultados');
         const totalProdutos = {{ products|length }};
@@ -298,6 +315,7 @@
         // Função para filtrar produtos
         function filtrarProdutos() {
             const termoBusca = filtroNome.value.toLowerCase().trim();
+            const termoModelo = filtroModelo.value.toLowerCase().trim();
             const categoriaSelecionada = filtroCategoria.value;
             
             const produtos = document.querySelectorAll('.produto-card');
@@ -305,12 +323,14 @@
             
             produtos.forEach(produto => {
                 const nome = produto.getAttribute('data-nome') || '';
+                const compatibilidade = produto.getAttribute('data-compatibilidade') || '';
                 const categoria = produto.getAttribute('data-categoria') || '';
                 
-                const correspondeNome = nome.includes(termoBusca);
+                const correspondeNome = !termoBusca || nome.includes(termoBusca);
+                const correspondeModelo = !termoModelo || compatibilidade.includes(termoModelo);
                 const correspondeCategoria = !categoriaSelecionada || categoria === categoriaSelecionada;
                 
-                if (correspondeNome && correspondeCategoria) {
+                if (correspondeNome && correspondeModelo && correspondeCategoria) {
                     produto.style.display = '';
                     produtosVisiveis++;
                 } else {
@@ -331,15 +351,15 @@
                     mensagemSemResultados.classList.add('hidden');
                 }
             }
-            
-            // Mostra/oculta botão de limpar busca
-            if (limparBusca) {
-                if (termoBusca || categoriaSelecionada) {
-                    limparBusca.classList.remove('hidden');
-                } else {
-                    limparBusca.classList.add('hidden');
-                }
-            }
+        }
+
+        // Função para limpar todos os filtros
+        function limparTodosFiltros() {
+            if (filtroNome) filtroNome.value = '';
+            if (filtroModelo) filtroModelo.value = '';
+            if (filtroCategoria) filtroCategoria.value = '';
+            filtrarProdutos();
+            if (filtroNome) filtroNome.focus();
         }
 
         // Event listeners para os filtros
@@ -347,18 +367,12 @@
             filtroNome.addEventListener('input', filtrarProdutos);
         }
         
-        if (filtroCategoria) {
-            filtroCategoria.addEventListener('change', filtrarProdutos);
+        if (filtroModelo) {
+            filtroModelo.addEventListener('input', filtrarProdutos);
         }
         
-        // Botão de limpar busca
-        if (limparBusca) {
-            limparBusca.addEventListener('click', function() {
-                filtroNome.value = '';
-                filtroCategoria.value = '';
-                filtrarProdutos();
-                filtroNome.focus();
-            });
+        if (filtroCategoria) {
+            filtroCategoria.addEventListener('change', filtrarProdutos);
         }
 
         // Aguarda o carregamento completo da página
