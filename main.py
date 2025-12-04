@@ -1598,6 +1598,10 @@ async def finalizar_servico(servico_id: int, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(venda)
         
+        print(f"[INFO] Serviço finalizado: {servico.name}")
+        print(f"[INFO] Lucro registrado: R$ {lucro:.2f}")
+        print(f"[INFO] ID da venda: {venda.id}")
+        
         return {
             "status": "sucesso",
             "message": f"Serviço finalizado! +R$ {lucro:.2f} de lucro registrado.",
@@ -2369,7 +2373,13 @@ async def financas_page(request: Request, db: Session = Depends(get_db)):
     if not can_use_database(db):
         return templates.TemplateResponse(
             "financas.html",
-            {"purchases": [], "service_orders": [], "error": "Banco de dados não disponível", "request": request}
+            {
+                "purchases": [],
+                "service_orders": [],
+                "service_sales": [],
+                "error": "Banco de dados não disponível",
+                "request": request
+            }
         )
     
     try:
@@ -2383,7 +2393,15 @@ async def financas_page(request: Request, db: Session = Depends(get_db)):
         ).filter(models.ServiceOrder.status == "concluido").order_by(desc(models.ServiceOrder.created_at)).all()
         
         # Busca histórico de vendas de serviços (finalizados diretamente do card)
-        service_sales = db.query(models.ServiceSaleHistory).order_by(desc(models.ServiceSaleHistory.sold_at)).all()
+        try:
+            service_sales = db.query(models.ServiceSaleHistory).order_by(desc(models.ServiceSaleHistory.sold_at)).all()
+            print(f"[INFO] Encontrados {len(service_sales)} registros de vendas de serviços")
+        except Exception as e:
+            print(f"[AVISO] Erro ao buscar histórico de vendas de serviços: {e}")
+            print("[AVISO] A tabela service_sale_history pode não existir. Execute o script criar_todas_tabelas.sql")
+            import traceback
+            traceback.print_exc()
+            service_sales = []
         
         # Prepara dados das compras
         purchases_data = []
@@ -2537,9 +2555,17 @@ async def financas_page(request: Request, db: Session = Depends(get_db)):
         )
     except Exception as e:
         print(f"[ERRO] Erro ao carregar página de finanças: {e}")
+        import traceback
+        traceback.print_exc()
         return templates.TemplateResponse(
             "financas.html",
-            {"purchases": [], "service_orders": [], "error": str(e), "request": request}
+            {
+                "purchases": [],
+                "service_orders": [],
+                "service_sales": [],
+                "error": str(e),
+                "request": request
+            }
         )
 
 # --- API: LISTAR COMPRAS ---
