@@ -153,7 +153,7 @@
                                         <div class="space-y-1">
                                             {% for item in purchase.items %}
                                             <div class="flex justify-between text-sm">
-                                                <span class="text-gray-700">{{ item.repair_part.device_model }} - {{ item.repair_part.part_name if item.repair_part.part_name else (item.repair_part.replaced_part if item.repair_part.replaced_part else "N/A") }}</span>
+                                                <span class="text-gray-700">{{ item.repair_part.device_model }} - {{ item.repair_part.part_name or "N/A" }}</span>
                                                 <span class="text-gray-900 font-medium">{{ item.quantity }}x R$ {{ "%.2f"|format(item.unit_cost) }}</span>
                                             </div>
                                             {% endfor %}
@@ -300,11 +300,65 @@
                         </div>
                     </div>
                     {% endfor %}
-                {% else %}
+                {% endif %}
+                
+                <!-- Vendas de Serviços (Finalizadas diretamente do card) -->
+                {% if service_sales %}
+                    {% for sale in service_sales %}
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+                        <div class="flex justify-between items-start">
+                            <div class="flex gap-4 flex-1">
+                                <div class="w-12 h-12 rounded-lg {% if sale.profit > 0 %}bg-green-50 text-green-600{% elif sale.profit < 0 %}bg-red-50 text-red-600{% else %}bg-gray-50 text-gray-600{% endif %} flex items-center justify-center shrink-0">
+                                    <i data-lucide="wrench" class="w-6 h-6"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h3 class="text-lg font-bold text-gray-900">{{ sale.service_name }}</h3>
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700">
+                                            Serviço Finalizado
+                                        </span>
+                                    </div>
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 p-4 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p class="text-xs text-gray-400 mb-1">Receita</p>
+                                            <p class="text-sm font-semibold text-gray-900">R$ {{ "%.2f"|format(sale.sale_price) }}</p>
+                                        </div>
+                                        {% if sale.part_cost %}
+                                        <div>
+                                            <p class="text-xs text-gray-400 mb-1">Custo da Peça</p>
+                                            <p class="text-sm font-semibold text-red-600">- R$ {{ "%.2f"|format(sale.part_cost) }}</p>
+                                        </div>
+                                        {% else %}
+                                        <div>
+                                            <p class="text-xs text-gray-400 mb-1">Custo</p>
+                                            <p class="text-sm font-semibold text-gray-500">Sem peça vinculada</p>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <p class="text-xs text-gray-400 mb-1">Lucro</p>
+                                            <p class="text-lg font-bold {% if sale.profit > 0 %}text-green-600{% elif sale.profit < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                                                R$ {{ "%.2f"|format(sale.profit) }}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-400 mb-1">Data</p>
+                                            <p class="text-sm font-medium text-gray-600">
+                                                {{ sale.sold_at | formatar_data }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% if not service_orders and not service_sales %}
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
                         <i data-lucide="dollar-sign" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
-                        <p class="text-gray-500 text-lg mb-2">Nenhuma ordem de serviço encontrada</p>
-                        <p class="text-gray-400 text-sm">Crie ordens de serviço para visualizar os lucros</p>
+                        <p class="text-gray-500 text-lg mb-2">Nenhum lucro registrado</p>
+                        <p class="text-gray-400 text-sm">Finalize serviços ou ordens de serviço para visualizar os lucros</p>
                     </div>
                 {% endif %}
             </div>
@@ -450,7 +504,7 @@
                         <select name="repair_part_id[]" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
                             <option value="">Selecione...</option>
                             ${pecasDisponiveis.map(peca => `
-                                <option value="${peca.id}">${peca.device_model} - ${peca.part_name || peca.replaced_part || 'N/A'}</option>
+                                <option value="${peca.id}">${peca.device_model} - ${peca.part_name || 'N/A'}</option>
                             `).join('')}
                         </select>
                     </div>

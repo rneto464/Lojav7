@@ -106,9 +106,11 @@ class Service(Base):
     price = Column(Numeric(10, 2))  # Preço do serviço (mão de obra)
     estimated_time = Column(Integer, nullable=True)  # Tempo estimado em minutos (opcional)
     status = Column(String, default="active")  # 'active', 'inactive'
+    linked_part_id = Column(Integer, ForeignKey("repair_parts.id"), nullable=True)  # Peça vinculada para cálculo de custo
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
-    # Relacionamento com ordens de serviço
+    # Relacionamentos
+    linked_part = relationship("RepairPart", foreign_keys=[linked_part_id])  # Peça vinculada
     service_orders = relationship("ServiceOrder", secondary="service_order_services", back_populates="services")
 
 # Tabela de relacionamento many-to-many entre ordens de serviço e peças
@@ -180,3 +182,18 @@ class PurchaseItem(Base):
     # Relacionamentos
     purchase = relationship("Purchase", back_populates="items")
     repair_part = relationship("RepairPart")
+
+# Modelo para Histórico de Vendas de Serviços
+class ServiceSaleHistory(Base):
+    __tablename__ = "service_sale_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    service_id = Column(Integer, ForeignKey("services.id"), nullable=False)  # ID do serviço vendido
+    service_name = Column(String)  # Nome do serviço (snapshot para histórico)
+    sale_price = Column(Numeric(10, 2))  # Preço de venda
+    part_cost = Column(Numeric(10, 2), nullable=True)  # Custo da peça vinculada
+    profit = Column(Numeric(10, 2))  # Lucro calculado (sale_price - part_cost)
+    sold_at = Column(DateTime, default=datetime.datetime.utcnow)  # Data/hora da venda
+    
+    # Relacionamento
+    service = relationship("Service", foreign_keys=[service_id])

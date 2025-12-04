@@ -113,6 +113,7 @@ class ServiceCreate(BaseModel):
     price: float  # Preço do serviço
     estimated_time: Optional[int] = None  # Tempo estimado em minutos
     status: Optional[str] = "active"  # 'active' ou 'inactive'
+    linked_part_id: Optional[int] = None  # ID da peça vinculada para cálculo de custo
     created_at: Optional[datetime] = None  # Data de cadastro (opcional, usa data atual se não informado)
 
 class ServiceUpdate(BaseModel):
@@ -121,6 +122,7 @@ class ServiceUpdate(BaseModel):
     price: Optional[float] = None
     estimated_time: Optional[int] = None
     status: Optional[str] = None
+    linked_part_id: Optional[int] = None  # ID da peça vinculada para cálculo de custo
 
 # =========================================
 # 7. SCHEMAS PARA ORDENS DE SERVIÇO

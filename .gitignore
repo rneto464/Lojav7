@@ -50,7 +50,6 @@ ENV/
 logs/
 
 # Configurações locais
-config.json
 config.local.json
 
 # Arquivos temporários

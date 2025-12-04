@@ -12,7 +12,6 @@ from schemas import PurchaseCreate, PurchaseUpdate, PurchaseItemCreate
 from sqlalchemy import desc
 import json
 import os
-from pydantic import BaseModel
 from typing import Optional
 
 # Importações dos arquivos que criamos acima
@@ -1209,8 +1208,10 @@ async def reparos_page(request: Request, db: Session = Depends(get_db)):
         # Busca todas as peças físicas (sem subcategoria, todas são peças)
         pecas = db.query(models.RepairPart).order_by(desc(models.RepairPart.created_at)).all()
         
-        # Busca todos os serviços (mão de obra)
-        servicos = db.query(models.Service).order_by(desc(models.Service.created_at)).all()
+        # Busca todos os serviços (mão de obra) com peça vinculada
+        servicos = db.query(models.Service).options(
+            joinedload(models.Service.linked_part)
+        ).order_by(desc(models.Service.created_at)).all()
         
         # Busca peças disponíveis para formulários
         pecas_disponiveis = db.query(models.RepairPart).filter(
@@ -1248,7 +1249,7 @@ async def listar_pecas(db: Session = Depends(get_db)):
             {
                 "id": p.id,
                 "device_model": p.device_model,
-                "part_name": p.part_name if hasattr(p, 'part_name') else (p.replaced_part if hasattr(p, 'replaced_part') else ""),
+                "part_name": p.part_name or "",
                 "price": float(p.price) if p.price else 0.0,
                 "cost_price": float(p.cost_price) if p.cost_price else 0.0,
                 "available_stock": p.available_stock or 0,
@@ -1275,7 +1276,9 @@ async def listar_servicos(status: Optional[str] = None, db: Session = Depends(ge
         )
     
     try:
-        query = db.query(models.Service)
+        query = db.query(models.Service).options(
+            joinedload(models.Service.linked_part)
+        )
         if status:
             query = query.filter(models.Service.status == status)
         
@@ -1287,7 +1290,14 @@ async def listar_servicos(status: Optional[str] = None, db: Session = Depends(ge
                 "description": s.description,
                 "price": float(s.price) if s.price else 0.0,
                 "estimated_time": s.estimated_time,
-                "status": s.status
+                "status": s.status,
+                "linked_part_id": s.linked_part_id,
+                "linked_part": {
+                    "id": s.linked_part.id,
+                    "device_model": s.linked_part.device_model,
+                    "part_name": s.linked_part.part_name or "",
+                    "cost_price": float(s.linked_part.cost_price) if s.linked_part.cost_price else None
+                } if s.linked_part else None
             }
             for s in servicos
         ]
@@ -1449,6 +1459,7 @@ async def criar_servico(servico: ServiceCreate, db: Session = Depends(get_db)):
             price=servico.price,
             estimated_time=servico.estimated_time,
             status=servico.status or "active",
+            linked_part_id=servico.linked_part_id,
             created_at=data_cadastro
         )
         
@@ -1501,6 +1512,8 @@ async def atualizar_servico(servico_id: int, servico: ServiceUpdate, db: Session
             servico_db.estimated_time = servico.estimated_time
         if servico.status is not None:
             servico_db.status = servico.status
+        if servico.linked_part_id is not None:
+            servico_db.linked_part_id = servico.linked_part_id
         
         db.commit()
         
@@ -1515,6 +1528,98 @@ async def atualizar_servico(servico_id: int, servico: ServiceUpdate, db: Session
         return JSONResponse(
             status_code=500,
             content={"message": f"Erro ao atualizar serviço: {str(e)}"}
+        )
+
+# --- API: FINALIZAR SERVIÇO (REGISTRAR VENDA E CALCULAR LUCRO) ---
+@app.post("/api/servicos/{servico_id}/finalizar")
+async def finalizar_servico(servico_id: int, db: Session = Depends(get_db)):
+    """
+    Finaliza um serviço, calcula lucro e registra no histórico de vendas.
+    Fórmula: Lucro = Preço Venda - Custo da Peça Vinculada
+    """
+    if not can_use_database(db):
+        return JSONResponse(
+            status_code=503,
+            content={"message": "Banco de dados não disponível"}
+        )
+    
+    try:
+        # Busca o serviço com a peça vinculada
+        servico = db.query(models.Service).options(
+            joinedload(models.Service.linked_part)
+        ).filter(models.Service.id == servico_id).first()
+        
+        if not servico:
+            return JSONResponse(
+                status_code=404,
+                content={"message": "Serviço não encontrado"}
+            )
+        
+        if servico.status != "active":
+            return JSONResponse(
+                status_code=400,
+                content={"message": "Apenas serviços ativos podem ser finalizados"}
+            )
+        
+        # Calcula lucro
+        preco_venda = float(servico.price) if servico.price else 0.0
+        custo_peca = 0.0
+        
+        if servico.linked_part:
+            if servico.linked_part.cost_price and servico.linked_part.cost_price > 0:
+                custo_peca = float(servico.linked_part.cost_price)
+            else:
+                # Se não tem custo, estima 50% do preço da peça (se tiver preço)
+                if servico.linked_part.price and servico.linked_part.price > 0:
+                    custo_peca = float(servico.linked_part.price) * 0.5
+                else:
+                    # Se não tem nem custo nem preço, usa 0
+                    custo_peca = 0.0
+        
+        lucro = preco_venda - custo_peca
+        
+        # Cria registro no histórico de vendas
+        from datetime import datetime
+        venda = models.ServiceSaleHistory(
+            service_id=servico.id,
+            service_name=servico.name,
+            sale_price=preco_venda,
+            part_cost=custo_peca if custo_peca > 0 else None,
+            profit=lucro,
+            sold_at=datetime.utcnow()
+        )
+        
+        db.add(venda)
+        
+        # (Opcional) Desconta 1 unidade do estoque da peça vinculada
+        if servico.linked_part and servico.linked_part.available_stock > 0:
+            servico.linked_part.available_stock -= 1
+        
+        db.commit()
+        db.refresh(venda)
+        
+        return {
+            "status": "sucesso",
+            "message": f"Serviço finalizado! +R$ {lucro:.2f} de lucro registrado.",
+            "data": {
+                "service_id": servico.id,
+                "service_name": servico.name,
+                "sale_price": preco_venda,
+                "part_cost": custo_peca if custo_peca > 0 else None,
+                "profit": lucro,
+                "sold_at": venda.sold_at.isoformat() if venda.sold_at else None
+            }
+        }
+    except Exception as e:
+        try:
+            if db is not None:
+                db.rollback()
+        except:
+            pass
+        print(f"[ERRO] Erro ao finalizar serviço: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"message": f"Erro ao finalizar serviço: {str(e)}"}
         )
 
 # --- API: EXCLUIR SERVIÇO ---
@@ -1584,41 +1689,6 @@ def gerar_numero_ordem(db: Session) -> str:
     
     return f"OS-{ano_atual}-{proximo_numero:03d}"
 
-@app.get("/ordens-servico", response_class=HTMLResponse)
-async def ordens_servico_page(request: Request, db: Session = Depends(get_db)):
-    """Página de gerenciamento de ordens de serviço"""
-    if not can_use_database(db):
-        return templates.TemplateResponse(
-            "ordens_servico.html",
-            {
-                "ordens": [],
-                "pecas": [],
-                "request": request
-            }
-        )
-    
-    try:
-        # Busca todas as ordens de serviço
-        ordens = db.query(models.ServiceOrder).order_by(desc(models.ServiceOrder.created_at)).all()
-        
-        # Busca todas as peças de reparo para o formulário
-        pecas = db.query(models.RepairPart).filter(
-            models.RepairPart.status == "available"
-        ).all()
-    except Exception as e:
-        print(f"[ERRO] Erro ao buscar ordens de serviço: {e}")
-        ordens = []
-        pecas = []
-    
-    return templates.TemplateResponse(
-        "ordens_servico.html",
-        {
-            "ordens": ordens,
-            "pecas": pecas,
-            "request": request
-        }
-    )
-
 # --- API: LISTAR ORDENS DE SERVIÇO ---
 @app.get("/api/ordens-servico")
 async def listar_ordens_servico(status: Optional[str] = None, db: Session = Depends(get_db)):
@@ -1684,7 +1754,6 @@ async def listar_ordens_servico(status: Optional[str] = None, db: Session = Depe
                 "service_description": ordem.service_description,
                 "status": ordem.status,
                 "total_value": float(ordem.total_value) if ordem.total_value else total,
-                "profit": float(ordem.profit) if ordem.profit is not None else None,
                 "notes": ordem.notes,
                 "created_at": ordem.created_at.isoformat() if ordem.created_at else None,
                 "completed_at": ordem.completed_at.isoformat() if ordem.completed_at else None,
@@ -1692,9 +1761,8 @@ async def listar_ordens_servico(status: Optional[str] = None, db: Session = Depe
                     {
                         "id": part.id,
                         "device_model": part.device_model,
-                        "part_name": part.part_name if hasattr(part, 'part_name') else (part.replaced_part if hasattr(part, 'replaced_part') else "N/A"),
+                        "part_name": part.part_name or "N/A",
                         "price": float(part.price) if part.price else 0.0,
-                        "cost_price": float(part.cost_price) if part.cost_price else None,
                         "quantity": quantidades_pecas.get(part.id, 1)
                     }
                     for part in ordem.parts
@@ -1784,7 +1852,6 @@ async def obter_ordem_servico(ordem_id: int, db: Session = Depends(get_db)):
             "service_description": ordem.service_description,
             "status": ordem.status,
             "total_value": float(ordem.total_value) if ordem.total_value else total,
-            "profit": float(ordem.profit) if ordem.profit is not None else None,
             "notes": ordem.notes,
             "created_at": ordem.created_at.isoformat() if ordem.created_at else None,
             "completed_at": ordem.completed_at.isoformat() if ordem.completed_at else None,
@@ -1792,7 +1859,7 @@ async def obter_ordem_servico(ordem_id: int, db: Session = Depends(get_db)):
                 {
                     "id": part.id,
                     "device_model": part.device_model,
-                    "part_name": part.part_name if hasattr(part, 'part_name') else (part.replaced_part if hasattr(part, 'replaced_part') else "N/A"),
+                    "part_name": part.part_name or "N/A",
                     "price": float(part.price) if part.price else 0.0,
                     "cost_price": float(part.cost_price) if part.cost_price else None,
                     "quantity": quantidades_pecas.get(part.id, 1)
@@ -1844,7 +1911,7 @@ async def criar_ordem_servico(ordem: ServiceOrderCreate, db: Session = Depends(g
                         content={"message": f"Peça com ID {part_data.repair_part_id} não encontrada"}
                     )
                 if peca.status != "available":
-                    part_name = peca.part_name if hasattr(peca, 'part_name') else (peca.replaced_part if hasattr(peca, 'replaced_part') else "N/A")
+                    part_name = peca.part_name or "N/A"
                     return JSONResponse(
                         status_code=400,
                         content={"message": f"Peça {peca.device_model} - {part_name} não está disponível"}
@@ -1852,7 +1919,7 @@ async def criar_ordem_servico(ordem: ServiceOrderCreate, db: Session = Depends(g
                 # Verifica estoque
                 estoque_disponivel = peca.available_stock or 0
                 if estoque_disponivel < part_data.quantity:
-                    part_name = peca.part_name if hasattr(peca, 'part_name') else (peca.replaced_part if hasattr(peca, 'replaced_part') else "N/A")
+                    part_name = peca.part_name or "N/A"
                     return JSONResponse(
                         status_code=400,
                         content={"message": f"Estoque insuficiente para a peça {peca.device_model} - {part_name}. Disponível: {estoque_disponivel}, Solicitado: {part_data.quantity}"}
@@ -2315,6 +2382,9 @@ async def financas_page(request: Request, db: Session = Depends(get_db)):
             joinedload(models.ServiceOrder.services)
         ).filter(models.ServiceOrder.status == "concluido").order_by(desc(models.ServiceOrder.created_at)).all()
         
+        # Busca histórico de vendas de serviços (finalizados diretamente do card)
+        service_sales = db.query(models.ServiceSaleHistory).order_by(desc(models.ServiceSaleHistory.sold_at)).all()
+        
         # Prepara dados das compras
         purchases_data = []
         for purchase in purchases:
@@ -2325,7 +2395,7 @@ async def financas_page(request: Request, db: Session = Depends(get_db)):
                     "repair_part": {
                         "id": item.repair_part.id if item.repair_part else None,
                         "device_model": item.repair_part.device_model if item.repair_part else "N/A",
-                        "part_name": item.repair_part.part_name if item.repair_part and hasattr(item.repair_part, 'part_name') else (item.repair_part.replaced_part if item.repair_part and hasattr(item.repair_part, 'replaced_part') else "N/A")
+                        "part_name": (item.repair_part.part_name or "N/A") if item.repair_part else "N/A"
                     },
                     "quantity": item.quantity,
                     "unit_cost": float(item.unit_cost) if item.unit_cost else 0.0,
@@ -2375,7 +2445,7 @@ async def financas_page(request: Request, db: Session = Depends(get_db)):
                     # Se não tem cost_price, estima como 50% do preço (margem padrão)
                     custo_estimado = float(part.price or 0) * 0.5
                     custo_pecas += custo_estimado * quantidade
-                    part_name = part.part_name if hasattr(part, 'part_name') else (part.replaced_part if hasattr(part, 'replaced_part') else "N/A")
+                    part_name = part.part_name or "N/A"
                     pecas_sem_custo.append({
                         "id": part.id,
                         "nome": f"{part.device_model} - {part_name}",
@@ -2444,11 +2514,24 @@ async def financas_page(request: Request, db: Session = Depends(get_db)):
                 "completed_at": order.completed_at.isoformat() if order.completed_at else None
             })
         
+        # Prepara dados das vendas de serviços (finalizados diretamente do card)
+        service_sales_data = []
+        for sale in service_sales:
+            service_sales_data.append({
+                "id": sale.id,
+                "service_name": sale.service_name,
+                "sale_price": float(sale.sale_price) if sale.sale_price else 0.0,
+                "part_cost": float(sale.part_cost) if sale.part_cost else None,
+                "profit": float(sale.profit) if sale.profit else 0.0,
+                "sold_at": sale.sold_at.isoformat() if sale.sold_at else None
+            })
+        
         return templates.TemplateResponse(
             "financas.html",
             {
                 "purchases": purchases_data,
                 "service_orders": orders_data,
+                "service_sales": service_sales_data,
                 "request": request
             }
         )
@@ -2484,7 +2567,7 @@ async def listar_compras(db: Session = Depends(get_db)):
                     "repair_part": {
                         "id": item.repair_part.id if item.repair_part else None,
                         "device_model": item.repair_part.device_model if item.repair_part else "N/A",
-                        "part_name": item.repair_part.part_name if item.repair_part and hasattr(item.repair_part, 'part_name') else (item.repair_part.replaced_part if item.repair_part and hasattr(item.repair_part, 'replaced_part') else "N/A")
+                        "part_name": (item.repair_part.part_name or "N/A") if item.repair_part else "N/A"
                     },
                     "quantity": item.quantity,
                     "unit_cost": float(item.unit_cost) if item.unit_cost else 0.0,
@@ -2705,7 +2788,7 @@ async def obter_compra(compra_id: int, db: Session = Depends(get_db)):
                 "repair_part": {
                     "id": item.repair_part.id if item.repair_part else None,
                     "device_model": item.repair_part.device_model if item.repair_part else "N/A",
-                    "replaced_part": item.repair_part.replaced_part if item.repair_part else "N/A"
+                    "part_name": item.repair_part.part_name if item.repair_part else "N/A"
                 },
                 "quantity": item.quantity,
                 "unit_cost": float(item.unit_cost) if item.unit_cost else 0.0,

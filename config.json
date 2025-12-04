@@ -1,0 +1,6 @@
+{
+  "mensagem_fornecedor": "Olá! Preciso dos seguintes itens:\n\n{itens}\n\nAguardo retorno. Obrigado!",
+  "mensagens_fornecedores": {
+    "2": "ola tech vision"
+  }
+}

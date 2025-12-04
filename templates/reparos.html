@@ -32,7 +32,6 @@
                 <a href="/produtos" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Produtos</a>
                 <a href="/fornecedores" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Fornecedores</a>
                 <a href="/reparos" class="bg-white/20 px-4 py-2 rounded-md transition text-white">Peças</a>
-                <a href="/ordens-servico" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Ordens de Serviço</a>
                 <a href="/financas" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Finanças</a>
                 <a href="/movimentacoes" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition">Movimentações</a>
                 <a href="/configuracoes" class="text-blue-100 px-4 py-2 hover:bg-white/10 rounded-md transition flex items-center justify-center" title="Configurações">
@@ -121,7 +120,7 @@
                                         <span class="text-xs font-mono text-gray-400">#{{ peca.id }}</span>
                                     </div>
                                     <p class="text-sm text-gray-600 mb-1">
-                                        <span class="font-medium">Peça:</span> {{ peca.part_name if peca.part_name else (peca.replaced_part if peca.replaced_part else "N/A") }}
+                                        <span class="font-medium">Peça:</span> {{ peca.part_name or "N/A" }}
                                     </p>
                                     <div class="flex gap-6 mt-3">
                                         <div>
@@ -157,7 +156,7 @@
                                 <button onclick="editarPeca({{ peca.id }})" class="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition" title="Editar">
                                     <i data-lucide="edit" class="w-5 h-5"></i>
                                 </button>
-                                <button onclick="excluirPeca({{ peca.id }}, '{{ peca.device_model }} - {{ peca.part_name if peca.part_name else (peca.replaced_part if peca.replaced_part else "N/A") }}')" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition" title="Excluir">
+                                <button onclick="excluirPeca({{ peca.id }}, '{{ peca.device_model }} - {{ peca.part_name or "N/A" }}')" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition" title="Excluir">
                                     <i data-lucide="trash-2" class="w-5 h-5"></i>
                                 </button>
                             </div>
@@ -189,55 +188,91 @@
                 {% if servicos %}
                     {% for servico in servicos %}
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
-                        <div class="flex justify-between items-start">
-                            <div class="flex gap-4 flex-1">
+                        <div class="flex justify-between items-center gap-6">
+                            <!-- Esquerda: Ícone, Nome e Modelo -->
+                            <div class="flex gap-4 flex-1 min-w-0">
                                 <div class="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
                                     <i data-lucide="wrench" class="w-6 h-6"></i>
                                 </div>
-                                <div class="flex-1">
+                                <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2 mb-2">
-                                        <h3 class="text-lg font-bold text-gray-900">{{ servico.name }}</h3>
-                                        <span class="text-xs font-mono text-gray-400">#{{ servico.id }}</span>
+                                        <h3 class="text-lg font-bold text-gray-900 truncate">{{ servico.name }}</h3>
+                                        <span class="text-xs font-mono text-gray-400 shrink-0">#{{ servico.id }}</span>
                                         {% if servico.status == "active" %}
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Ativo</span>
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 shrink-0">Ativo</span>
                                         {% else %}
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Inativo</span>
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 shrink-0">Inativo</span>
                                         {% endif %}
                                     </div>
-                                    {% if servico.description %}
-                                    <p class="text-sm text-gray-600 mb-1">
+                                    {% if servico.linked_part and servico.linked_part.device_model %}
+                                    <p class="text-sm font-medium text-gray-700">
+                                        {{ servico.linked_part.device_model }}
+                                    </p>
+                                    {% elif servico.description %}
+                                    <p class="text-sm text-gray-600 truncate">
                                         {{ servico.description }}
                                     </p>
                                     {% endif %}
-                                    <div class="flex gap-6 mt-3">
-                                        <div>
-                                            <p class="text-xs text-gray-400 mb-1">Preço</p>
-                                            <p class="text-xl font-bold text-emerald-600">
-                                                R$ {{ "%.2f"|format(servico.price) }}
-                                            </p>
-                                        </div>
-                                        {% if servico.estimated_time %}
-                                        <div>
-                                            <p class="text-xs text-gray-400 mb-1">Tempo Estimado</p>
-                                            <p class="text-sm font-medium text-gray-600">
-                                                {{ servico.estimated_time }} min
-                                            </p>
-                                        </div>
-                                        {% endif %}
-                                        <div>
-                                            <p class="text-xs text-gray-400 mb-1">Data de Cadastro</p>
-                                            <p class="text-sm font-medium text-gray-600">
-                                                {{ servico.created_at | formatar_data }}
-                                            </p>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
-                            <div class="flex gap-2">
-                                <button onclick="editarServico({{ servico.id }})" class="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition" title="Editar">
+                            
+                            <!-- Meio: Preço, Custo, Lucro e Tempo -->
+                            <div class="flex flex-col gap-3 shrink-0">
+                                <div>
+                                    <p class="text-xs text-gray-400 mb-1">Preço de Venda</p>
+                                    <p class="text-xl font-bold text-emerald-600">
+                                        R$ {{ "%.2f"|format(servico.price) }}
+                                    </p>
+                                </div>
+                                {% if servico.linked_part %}
+                                    {% set custo_peca = servico.linked_part.cost_price if servico.linked_part.cost_price and servico.linked_part.cost_price > 0 else (servico.linked_part.price * 0.5 if servico.linked_part.price and servico.linked_part.price > 0 else 0) %}
+                                    {% set lucro_estimado = servico.price - custo_peca %}
+                                    <div>
+                                        <p class="text-xs text-gray-400 mb-1">Custo da Peça</p>
+                                        <p class="text-sm font-semibold text-red-600">
+                                            - R$ {{ "%.2f"|format(custo_peca) }}
+                                        </p>
+                                        {% if not servico.linked_part.cost_price or servico.linked_part.cost_price == 0 %}
+                                        <p class="text-xs text-yellow-600 mt-0.5">⚠ Estimativa</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="border-t border-gray-200 pt-2">
+                                        <p class="text-xs text-gray-400 mb-1">Lucro Estimado</p>
+                                        <p class="text-lg font-bold {% if lucro_estimado > 0 %}text-green-600{% elif lucro_estimado < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                                            R$ {{ "%.2f"|format(lucro_estimado) }}
+                                        </p>
+                                    </div>
+                                {% else %}
+                                    <div>
+                                        <p class="text-xs text-gray-400 mb-1">Lucro Estimado</p>
+                                        <p class="text-lg font-bold text-emerald-600">
+                                            R$ {{ "%.2f"|format(servico.price) }}
+                                        </p>
+                                        <p class="text-xs text-gray-500 mt-0.5">Sem peça vinculada</p>
+                                    </div>
+                                {% endif %}
+                                {% if servico.estimated_time %}
+                                <div class="pt-2 border-t border-gray-200">
+                                    <p class="text-xs text-gray-400 mb-1">Tempo Estimado</p>
+                                    <p class="text-sm font-medium text-gray-600">
+                                        {{ servico.estimated_time }} min
+                                    </p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Direita: Ações (Finalizar, Editar, Excluir) -->
+                            <div class="flex items-center gap-2 shrink-0">
+                                {% if servico.status == "active" %}
+                                <button onclick="finalizarServico({{ servico.id }})" class="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition font-medium text-sm shadow-sm hover:shadow-md" title="Finalizar Serviço">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                    Finalizar
+                                </button>
+                                {% endif %}
+                                <button onclick="editarServico({{ servico.id }})" class="flex items-center justify-center w-10 h-10 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition" title="Editar">
                                     <i data-lucide="edit" class="w-5 h-5"></i>
                                 </button>
-                                <button onclick="excluirServico({{ servico.id }}, '{{ servico.name }}')" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition" title="Excluir">
+                                <button onclick="excluirServico({{ servico.id }}, '{{ servico.name }}')" class="flex items-center justify-center w-10 h-10 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition" title="Excluir">
                                     <i data-lucide="trash-2" class="w-5 h-5"></i>
                                 </button>
                             </div>
@@ -255,7 +290,6 @@
                 {% endif %}
             </div>
         </div>
-
     </div>
 
     <!-- Modal de Cadastro/Edição -->
@@ -353,6 +387,20 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Tempo Estimado (minutos)</label>
                         <input type="number" min="0" id="servico_estimated_time" name="servico_estimated_time" placeholder="Ex: 30" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
                     </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Peça Vinculada (Opcional)</label>
+                    <select id="servico_linked_part_id" name="servico_linked_part_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
+                        <option value="">Nenhuma peça vinculada</option>
+                        {% for peca in pecas_disponiveis %}
+                        <option value="{{ peca.id }}" data-cost="{{ peca.cost_price or 0 }}">
+                            {{ peca.device_model }} - {{ peca.part_name or 'N/A' }}
+                            {% if peca.cost_price %} (Custo: R$ {{ "%.2f"|format(peca.cost_price) }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Vincule uma peça para cálculo automático de lucro ao finalizar o serviço</p>
                 </div>
 
                 <div>
@@ -502,7 +550,7 @@
                 if (peca) {
                     document.getElementById('peca_id').value = peca.id;
                     document.getElementById('device_model').value = peca.device_model;
-                    document.getElementById('part_name').value = peca.part_name || peca.replaced_part || '';
+                    document.getElementById('part_name').value = peca.part_name || '';
                     document.getElementById('price').value = peca.price;
                     document.getElementById('cost_price').value = peca.cost_price || '';
                     document.getElementById('available_stock').value = peca.available_stock || 0;
@@ -639,13 +687,7 @@
                     document.getElementById('servico_price').value = servico.price;
                     document.getElementById('servico_estimated_time').value = servico.estimated_time || '';
                     document.getElementById('servico_status').value = servico.status || 'active';
-                    
-                    // Carrega data de cadastro se existir
-                    if (servico.created_at) {
-                        const dataCadastro = new Date(servico.created_at);
-                        const dataCadastroLocal = new Date(dataCadastro.getTime() - dataCadastro.getTimezoneOffset() * 60000);
-                        document.getElementById('servico_created_at').value = dataCadastroLocal.toISOString().slice(0, 16);
-                    }
+                    document.getElementById('servico_linked_part_id').value = servico.linked_part_id || '';
                 }
             } catch (error) {
                 console.error('Erro ao carregar serviço:', error);
@@ -659,12 +701,14 @@
             const formData = new FormData(event.target);
             const servicoId = document.getElementById('servico_id').value;
             
+            const linkedPartId = formData.get('servico_linked_part_id');
             const dados = {
                 name: formData.get('servico_name'),
                 description: formData.get('servico_description') || null,
                 price: parseFloat(formData.get('servico_price')),
                 estimated_time: formData.get('servico_estimated_time') ? parseInt(formData.get('servico_estimated_time')) : null,
-                status: formData.get('servico_status') || 'active'
+                status: formData.get('servico_status') || 'active',
+                linked_part_id: linkedPartId ? parseInt(linkedPartId) : null
             };
             
             // Adiciona data personalizada se fornecida
@@ -729,6 +773,34 @@
             } catch (error) {
                 console.error('Erro ao excluir serviço:', error);
                 alert('Erro ao excluir serviço');
+            }
+        }
+
+        async function finalizarServico(servicoId) {
+            if (!confirm('Deseja finalizar este serviço? O lucro será calculado automaticamente e registrado no histórico.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/servicos/${servicoId}/finalizar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Mostra mensagem de sucesso com o lucro calculado
+                    const lucro = result.data?.profit || 0;
+                    const mensagem = `✅ Serviço finalizado com sucesso!\n\n💰 Lucro registrado: R$ ${lucro.toFixed(2)}\n\nO registro foi salvo na aba "Lucros por Serviço" da página de Finanças.`;
+                    alert(mensagem);
+                    location.reload();
+                } else {
+                    alert('❌ Erro ao finalizar serviço: ' + (result.message || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro ao finalizar serviço:', error);
+                alert('❌ Erro de conexão ao finalizar serviço. Verifique sua conexão com a internet.');
             }
         }
 

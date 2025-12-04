@@ -138,11 +138,13 @@ CREATE TABLE IF NOT EXISTS services (
     price NUMERIC(10, 2) NOT NULL,
     estimated_time INTEGER,
     status VARCHAR DEFAULT 'active',
+    linked_part_id INTEGER REFERENCES repair_parts(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_services_name ON services(name);
 CREATE INDEX IF NOT EXISTS idx_services_status ON services(status);
+CREATE INDEX IF NOT EXISTS idx_services_linked_part ON services(linked_part_id);
 
 COMMENT ON TABLE services IS 'Tabela de serviços (mão de obra) - ações que você faz';
 COMMENT ON COLUMN services.name IS 'Nome do serviço (ex: Troca de Tela, Formatação, Limpeza Química)';
@@ -150,6 +152,7 @@ COMMENT ON COLUMN services.description IS 'Descrição detalhada do serviço';
 COMMENT ON COLUMN services.price IS 'Preço do serviço (mão de obra)';
 COMMENT ON COLUMN services.estimated_time IS 'Tempo estimado em minutos (opcional)';
 COMMENT ON COLUMN services.status IS 'Status: active ou inactive';
+COMMENT ON COLUMN services.linked_part_id IS 'ID da peça vinculada para cálculo automático de custo';
 
 -- ============================================
 -- 8. TABELA: service_orders (Ordens de Serviço)
@@ -254,6 +257,30 @@ COMMENT ON COLUMN purchase_items.unit_cost IS 'Custo unitário da peça na compr
 COMMENT ON COLUMN purchase_items.total_cost IS 'Custo total (quantity × unit_cost)';
 
 -- ============================================
+-- 13. TABELA: service_sale_history (Histórico de Vendas de Serviços)
+-- ============================================
+CREATE TABLE IF NOT EXISTS service_sale_history (
+    id SERIAL PRIMARY KEY,
+    service_id INTEGER NOT NULL REFERENCES services(id),
+    service_name VARCHAR NOT NULL,
+    sale_price NUMERIC(10, 2) NOT NULL,
+    part_cost NUMERIC(10, 2),
+    profit NUMERIC(10, 2) NOT NULL,
+    sold_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_service_sale_history_service ON service_sale_history(service_id);
+CREATE INDEX IF NOT EXISTS idx_service_sale_history_sold_at ON service_sale_history(sold_at);
+
+COMMENT ON TABLE service_sale_history IS 'Histórico de vendas de serviços finalizados diretamente do card';
+COMMENT ON COLUMN service_sale_history.service_id IS 'ID do serviço vendido';
+COMMENT ON COLUMN service_sale_history.service_name IS 'Nome do serviço (snapshot para histórico)';
+COMMENT ON COLUMN service_sale_history.sale_price IS 'Preço de venda';
+COMMENT ON COLUMN service_sale_history.part_cost IS 'Custo da peça vinculada';
+COMMENT ON COLUMN service_sale_history.profit IS 'Lucro calculado (sale_price - part_cost)';
+COMMENT ON COLUMN service_sale_history.sold_at IS 'Data/hora da venda';
+
+-- ============================================
 -- MENSAGEM DE CONFIRMAÇÃO
 -- ============================================
 DO $$ 
@@ -269,8 +296,9 @@ BEGIN
     RAISE NOTICE '  - services (NOVA)';
     RAISE NOTICE '  - service_orders';
     RAISE NOTICE '  - service_order_parts';
-    RAISE NOTICE '  - service_order_services (NOVA)';
+    RAISE NOTICE '  - service_order_services';
     RAISE NOTICE '  - purchases';
     RAISE NOTICE '  - purchase_items';
+    RAISE NOTICE '  - service_sale_history (NOVA)';
 END $$;
 

@@ -8,6 +8,7 @@
 -- Remove as tabelas na ordem correta (respeitando dependências de foreign keys)
 -- Começando pelas tabelas de relacionamento many-to-many
 
+DROP TABLE IF EXISTS service_sale_history CASCADE;
 DROP TABLE IF EXISTS service_order_services CASCADE;
 DROP TABLE IF EXISTS service_order_parts CASCADE;
 DROP TABLE IF EXISTS supplier_products CASCADE;
@@ -42,6 +43,7 @@ DROP SEQUENCE IF EXISTS services_id_seq CASCADE;
 DROP SEQUENCE IF EXISTS service_orders_id_seq CASCADE;
 DROP SEQUENCE IF EXISTS purchases_id_seq CASCADE;
 DROP SEQUENCE IF EXISTS purchase_items_id_seq CASCADE;
+DROP SEQUENCE IF EXISTS service_sale_history_id_seq CASCADE;
 
 -- Mensagem de confirmação
 DO $$ 
