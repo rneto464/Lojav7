@@ -133,6 +133,12 @@
                             </div>
                         </div>
                         <div class="flex gap-2">
+                            {% if ordem.status == 'em_andamento' %}
+                            <button onclick="abrirModalFinalizar({{ ordem.id }})" class="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition font-medium text-sm" title="Finalizar Serviço">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                Finalizar
+                            </button>
+                            {% endif %}
                             <button onclick="visualizarOrdem({{ ordem.id }})" class="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition" title="Visualizar">
                                 <i data-lucide="eye" class="w-5 h-5"></i>
                             </button>
@@ -296,6 +302,64 @@
             </div>
             <div id="conteudoVisualizar" class="p-6">
                 <!-- Conteúdo será preenchido via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Finalização -->
+    <div id="modalFinalizar" class="fixed inset-0 bg-black bg-opacity-50 modal-transition hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                        Finalizar Ordem de Serviço
+                    </h3>
+                    <button onclick="fecharModalFinalizar()" class="text-gray-400 hover:text-gray-600 transition">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="finalizarOrdemId" value="">
+                
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-semibold">Ordem:</span> <span id="finalizarOrdemNumero" class="font-mono"></span>
+                    </p>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Receita Total:</span>
+                        <span class="text-lg font-semibold text-emerald-600" id="finalizarReceitaTotal">R$ 0,00</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Custo Total:</span>
+                        <span class="text-lg font-semibold text-red-600" id="finalizarCustoTotal">R$ 0,00</span>
+                    </div>
+                    <div class="border-t border-gray-300 pt-3 flex justify-between items-center">
+                        <span class="text-base font-semibold text-gray-900">Lucro Estimado:</span>
+                        <span class="text-2xl font-bold text-green-600" id="finalizarLucroEstimado">R$ 0,00</span>
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p class="text-xs text-yellow-800">
+                        <i data-lucide="info" class="w-4 h-4 inline mr-1"></i>
+                        Ao finalizar, o lucro será calculado e registrado. A ordem será marcada como concluída e aparecerá na aba "Lucros por Serviço".
+                    </p>
+                </div>
+                
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button type="button" onclick="fecharModalFinalizar()" class="px-5 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btnConfirmarFinalizar" onclick="confirmarFinalizar()" class="px-5 py-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-md transition font-medium">
+                        <i data-lucide="check-circle" class="w-4 h-4 inline mr-1"></i>
+                        Confirmar Finalização
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -600,6 +664,102 @@
             } catch (error) {
                 console.error('Erro ao excluir ordem:', error);
                 alert('Erro ao excluir ordem');
+            }
+        }
+
+        // Função para abrir modal de finalização
+        async function abrirModalFinalizar(ordemId) {
+            try {
+                // Primeiro, busca os dados da ordem para calcular o lucro estimado
+                const response = await fetch(`/api/ordens-servico/${ordemId}`);
+                const ordem = await response.json();
+                
+                if (!ordem) {
+                    alert('Erro ao carregar dados da ordem');
+                    return;
+                }
+                
+                // Calcula lucro estimado (mesma lógica do backend)
+                let receita_pecas = 0;
+                let custo_pecas = 0;
+                let receita_servicos = 0;
+                
+                if (ordem.parts && ordem.parts.length > 0) {
+                    ordem.parts.forEach(part => {
+                        const qty = part.quantity || 1;
+                        receita_pecas += (part.price || 0) * qty;
+                        if (part.cost_price && part.cost_price > 0) {
+                            custo_pecas += part.cost_price * qty;
+                        } else {
+                            // Estima 50% do preço se não tiver custo
+                            custo_pecas += (part.price || 0) * 0.5 * qty;
+                        }
+                    });
+                }
+                
+                if (ordem.services && ordem.services.length > 0) {
+                    ordem.services.forEach(service => {
+                        const qty = service.quantity || 1;
+                        receita_servicos += (service.price || 0) * qty;
+                    });
+                }
+                
+                const receita_total = receita_pecas + receita_servicos;
+                const custo_total = custo_pecas;
+                const lucro_estimado = receita_total - custo_total;
+                
+                // Preenche o modal com os dados
+                document.getElementById('finalizarOrdemId').value = ordemId;
+                document.getElementById('finalizarOrdemNumero').textContent = ordem.order_number;
+                document.getElementById('finalizarLucroEstimado').textContent = `R$ ${lucro_estimado.toFixed(2)}`;
+                document.getElementById('finalizarReceitaTotal').textContent = `R$ ${receita_total.toFixed(2)}`;
+                document.getElementById('finalizarCustoTotal').textContent = `R$ ${custo_total.toFixed(2)}`;
+                
+                // Mostra o modal
+                document.getElementById('modalFinalizar').classList.remove('hidden');
+                document.getElementById('modalFinalizar').classList.add('flex');
+            } catch (error) {
+                console.error('Erro ao abrir modal de finalização:', error);
+                alert('Erro ao carregar dados da ordem');
+            }
+        }
+        
+        function fecharModalFinalizar() {
+            document.getElementById('modalFinalizar').classList.add('hidden');
+            document.getElementById('modalFinalizar').classList.remove('flex');
+        }
+        
+        async function confirmarFinalizar() {
+            const ordemId = document.getElementById('finalizarOrdemId').value;
+            const btn = document.getElementById('btnConfirmarFinalizar');
+            const textoOriginal = btn.innerHTML;
+            
+            btn.innerHTML = 'Finalizando...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`/api/ordens-servico/${ordemId}/finalizar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(`✅ Ordem finalizada com sucesso!\n\nLucro registrado: ${result.data ? `R$ ${result.data.profit.toFixed(2)}` : 'N/A'}`);
+                    fecharModalFinalizar();
+                    // Redireciona para a página de finanças
+                    window.location.href = '/financas';
+                } else {
+                    alert('Erro ao finalizar ordem: ' + (result.message || 'Erro desconhecido'));
+                    btn.innerHTML = textoOriginal;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Erro ao finalizar ordem:', error);
+                alert('Erro de conexão ao finalizar ordem');
+                btn.innerHTML = textoOriginal;
+                btn.disabled = false;
             }
         }
 

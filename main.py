@@ -1791,6 +1791,7 @@ async def obter_ordem_servico(ordem_id: int, db: Session = Depends(get_db)):
                     "device_model": part.device_model,
                     "part_name": part.part_name if hasattr(part, 'part_name') else (part.replaced_part if hasattr(part, 'replaced_part') else "N/A"),
                     "price": float(part.price) if part.price else 0.0,
+                    "cost_price": float(part.cost_price) if part.cost_price else None,
                     "quantity": quantidades_pecas.get(part.id, 1)
                 }
                 for part in ordem.parts
@@ -2119,6 +2120,119 @@ async def atualizar_ordem_servico(ordem_id: int, ordem: ServiceOrderUpdate, db: 
             content={"message": f"Erro ao atualizar ordem: {str(e)}"}
         )
 
+# --- API: FINALIZAR ORDEM DE SERVIÇO (CALCULAR E SALVAR LUCRO) ---
+@app.post("/api/ordens-servico/{ordem_id}/finalizar")
+async def finalizar_ordem_servico(ordem_id: int, db: Session = Depends(get_db)):
+    """
+    Finaliza uma ordem de serviço, calcula e salva o lucro.
+    Fórmula: Lucro = (Preço Venda Peça + Preço Serviço) - (Custo Compra Peça)
+    """
+    if not can_use_database(db):
+        return JSONResponse(
+            status_code=503,
+            content={"message": "Banco de dados não disponível"}
+        )
+    
+    try:
+        ordem_db = db.query(models.ServiceOrder).options(
+            joinedload(models.ServiceOrder.parts),
+            joinedload(models.ServiceOrder.services)
+        ).filter(models.ServiceOrder.id == ordem_id).first()
+        
+        if not ordem_db:
+            return JSONResponse(
+                status_code=404,
+                content={"message": "Ordem de serviço não encontrada"}
+            )
+        
+        # Busca quantidades das peças
+        quantidades_pecas = {}
+        for part in ordem_db.parts:
+            stmt = select(models.service_order_parts.c.quantity).where(
+                models.service_order_parts.c.service_order_id == ordem_id,
+                models.service_order_parts.c.repair_part_id == part.id
+            )
+            result = db.execute(stmt).first()
+            quantidades_pecas[part.id] = result[0] if result else 1
+        
+        # Calcula receita de peças (preço de venda)
+        receita_pecas = 0.0
+        for part in ordem_db.parts:
+            quantidade = quantidades_pecas.get(part.id, 1)
+            receita_pecas += float(part.price or 0) * quantidade
+        
+        # Calcula custo de compra das peças
+        custo_pecas = 0.0
+        for part in ordem_db.parts:
+            quantidade = quantidades_pecas.get(part.id, 1)
+            if part.cost_price and part.cost_price > 0:
+                custo_pecas += float(part.cost_price) * quantidade
+            else:
+                # Se não tem cost_price, estima como 50% do preço (margem padrão)
+                custo_estimado = float(part.price or 0) * 0.5
+                custo_pecas += custo_estimado * quantidade
+        
+        # Busca quantidades dos serviços
+        quantidades_servicos = {}
+        for servico in ordem_db.services:
+            stmt = select(models.service_order_services.c.quantity).where(
+                models.service_order_services.c.service_order_id == ordem_id,
+                models.service_order_services.c.service_id == servico.id
+            )
+            result = db.execute(stmt).first()
+            quantidades_servicos[servico.id] = result[0] if result else 1
+        
+        # Calcula receita de serviços (preço de venda)
+        receita_servicos = 0.0
+        for servico in ordem_db.services:
+            quantidade = quantidades_servicos.get(servico.id, 1)
+            receita_servicos += float(servico.price or 0) * quantidade
+        
+        # Custo dos serviços é 0 (não rastreamos custo de mão de obra)
+        custo_servicos = 0.0
+        
+        # Calcula lucro: (Preço Venda Peça + Preço Serviço) - (Custo Compra Peça)
+        receita_total = receita_pecas + receita_servicos
+        custo_total = custo_pecas + custo_servicos
+        lucro = receita_total - custo_total
+        
+        # Atualiza a ordem: status, completed_at e profit
+        from datetime import datetime
+        ordem_db.status = "concluido"
+        ordem_db.completed_at = datetime.utcnow()
+        ordem_db.profit = lucro
+        
+        db.commit()
+        db.refresh(ordem_db)
+        
+        return {
+            "status": "sucesso",
+            "message": "Ordem de serviço finalizada com sucesso",
+            "data": {
+                "order_id": ordem_db.id,
+                "order_number": ordem_db.order_number,
+                "receita_pecas": receita_pecas,
+                "receita_servicos": receita_servicos,
+                "receita_total": receita_total,
+                "custo_pecas": custo_pecas,
+                "custo_servicos": custo_servicos,
+                "custo_total": custo_total,
+                "profit": lucro,
+                "completed_at": ordem_db.completed_at.isoformat() if ordem_db.completed_at else None
+            }
+        }
+    except Exception as e:
+        try:
+            if db is not None:
+                db.rollback()
+        except:
+            pass
+        print(f"[ERRO] Erro ao finalizar ordem de serviço: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"message": f"Erro ao finalizar ordem de serviço: {str(e)}"}
+        )
+
 # --- API: EXCLUIR ORDEM DE SERVIÇO ---
 @app.delete("/api/ordens-servico/{ordem_id}")
 async def excluir_ordem_servico(ordem_id: int, db: Session = Depends(get_db)):
@@ -2287,10 +2401,16 @@ async def financas_page(request: Request, db: Session = Depends(get_db)):
             # Ou seja, o lucro dos serviços é 100% (ou você pode ajustar isso depois)
             custo_servicos = 0.0  # Serviços não têm custo de compra, apenas mão de obra (que não rastreamos)
             
-            # Calcula lucro
+            # Usa profit salvo se existir, senão calcula (para ordens antigas)
             receita = float(order.total_value) if order.total_value else 0.0
-            custo_total = custo_pecas + frete_proporcional + custo_servicos
-            lucro = receita - custo_total
+            if order.profit is not None:
+                # Usa o lucro já calculado e salvo quando a ordem foi finalizada
+                lucro = float(order.profit)
+                custo_total = receita - lucro  # Calcula o custo reverso para exibição
+            else:
+                # Calcula lucro (para ordens antigas que não têm profit salvo)
+                custo_total = custo_pecas + frete_proporcional + custo_servicos
+                lucro = receita - custo_total
             margem_lucro = (lucro / receita * 100) if receita > 0 else 0
             
             orders_data.append({

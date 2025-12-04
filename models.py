@@ -141,6 +141,7 @@ class ServiceOrder(Base):
     service_description = Column(String)  # Descrição geral do serviço realizado
     status = Column(String, default="em_andamento")  # 'em_andamento', 'concluido', 'cancelado'
     total_value = Column(Numeric(10, 2), default=0)  # Valor total do serviço (peças + serviços)
+    profit = Column(Numeric(10, 2), nullable=True)  # Lucro calculado: (Preço Venda Peça + Preço Serviço) - (Custo Compra Peça)
     notes = Column(String)  # Observações adicionais
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)  # Data de conclusão

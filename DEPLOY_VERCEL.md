@@ -20,14 +20,27 @@ A Vercel precisa das variáveis de ambiente configuradas. Você pode fazer isso 
 #### Opção A: Via Interface Web (Recomendado)
 1. Acesse seu projeto na Vercel
 2. Vá em **Settings** → **Environment Variables**
-3. Adicione:
-   - `DATABASE_URL`: Sua URL de conexão do PostgreSQL (Supabase)
-   - Exemplo: `postgresql://user:password@host:port/database`
+3. Clique em **Add New**
+4. Adicione a variável:
+   - **Name**: `DATABASE_URL`
+   - **Value**: `postgresql://postgres.twomasdpdmnhpvkcmuiw:SUA_SENHA_AQUI@aws-1-sa-east-1.pooler.supabase.com:6543/postgres`
+   - **Environment**: Selecione `Production`, `Preview` e `Development` (ou apenas Production)
+5. Clique em **Save**
+6. **IMPORTANTE**: Substitua `SUA_SENHA_AQUI` pela senha real do seu banco Supabase
+
+**Como obter a senha do Supabase:**
+1. Acesse https://supabase.com/dashboard
+2. Selecione seu projeto
+3. Vá em **Settings** → **Database**
+4. Role até **Connection string** → **URI**
+5. Copie a URL completa (ela já inclui a senha)
+6. Use essa URL completa no campo `DATABASE_URL` da Vercel
 
 #### Opção B: Via CLI
 ```bash
 vercel env add DATABASE_URL
 # Cole sua URL de conexão quando solicitado
+# Exemplo: postgresql://postgres.twomasdpdmnhpvkcmuiw:SUA_SENHA@aws-1-sa-east-1.pooler.supabase.com:6543/postgres
 ```
 
 ### 2. Estrutura de Arquivos
