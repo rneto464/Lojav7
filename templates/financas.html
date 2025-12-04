@@ -151,12 +151,16 @@
                                     <div class="mb-3">
                                         <p class="text-xs text-gray-400 mb-2">Itens Comprados</p>
                                         <div class="space-y-1">
-                                            {% for item in purchase.items %}
+                                            {% if purchase['items'] %}
+                                            {% for item in purchase['items'] %}
                                             <div class="flex justify-between text-sm">
-                                                <span class="text-gray-700">{{ item.repair_part.device_model }} - {{ item.repair_part.part_name or "N/A" }}</span>
+                                                <span class="text-gray-700">{{ item.repair_part.device_model if item.repair_part else "N/A" }} - {{ item.repair_part.part_name if item.repair_part and item.repair_part.part_name else "N/A" }}</span>
                                                 <span class="text-gray-900 font-medium">{{ item.quantity }}x R$ {{ "%.2f"|format(item.unit_cost) }}</span>
                                             </div>
                                             {% endfor %}
+                                            {% else %}
+                                            <p class="text-sm text-gray-500">Nenhum item registrado</p>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     <div class="flex gap-6 mt-3">
