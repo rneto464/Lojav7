@@ -782,25 +782,30 @@
             }
             
             try {
+                console.log(`[DEBUG] Finalizando serviço ID: ${servicoId}`);
                 const response = await fetch(`/api/servicos/${servicoId}/finalizar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
                 
+                console.log(`[DEBUG] Status da resposta: ${response.status}`);
                 const result = await response.json();
+                console.log('[DEBUG] Resultado:', result);
                 
                 if (response.ok) {
                     // Mostra mensagem de sucesso com o lucro calculado
-                    const lucro = result.data?.profit || 0;
+                    const lucro = result.data?.profit || result.profit || 0;
                     const mensagem = `✅ Serviço finalizado com sucesso!\n\n💰 Lucro registrado: R$ ${lucro.toFixed(2)}\n\nO registro foi salvo na aba "Lucros por Serviço" da página de Finanças.`;
                     alert(mensagem);
+                    console.log('[DEBUG] Recarregando página...');
                     location.reload();
                 } else {
-                    alert('❌ Erro ao finalizar serviço: ' + (result.message || 'Erro desconhecido'));
+                    console.error('[DEBUG] Erro na resposta:', result);
+                    alert('❌ Erro ao finalizar serviço: ' + (result.message || result.detail || 'Erro desconhecido'));
                 }
             } catch (error) {
-                console.error('Erro ao finalizar serviço:', error);
-                alert('❌ Erro de conexão ao finalizar serviço. Verifique sua conexão com a internet.');
+                console.error('[DEBUG] Erro ao finalizar serviço:', error);
+                alert('❌ Erro de conexão ao finalizar serviço. Verifique sua conexão com a internet.\n\nDetalhes: ' + error.message);
             }
         }
 

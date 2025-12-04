@@ -1595,16 +1595,34 @@ async def finalizar_servico(servico_id: int, db: Session = Depends(get_db)):
         if servico.linked_part and servico.linked_part.available_stock > 0:
             servico.linked_part.available_stock -= 1
         
-        db.commit()
-        db.refresh(venda)
-        
-        print(f"[INFO] Serviço finalizado: {servico.name}")
-        print(f"[INFO] Lucro registrado: R$ {lucro:.2f}")
-        print(f"[INFO] ID da venda: {venda.id}")
+        try:
+            db.commit()
+            db.refresh(venda)
+            
+            print(f"[INFO] Serviço finalizado: {servico.name}")
+            print(f"[INFO] Lucro registrado: R$ {lucro:.2f}")
+            print(f"[INFO] ID da venda: {venda.id}")
+            print(f"[INFO] Venda salva com sucesso no banco de dados")
+            
+            # Verifica se a venda foi realmente salva
+            venda_verificada = db.query(models.ServiceSaleHistory).filter(
+                models.ServiceSaleHistory.id == venda.id
+            ).first()
+            
+            if venda_verificada:
+                print(f"[INFO] Venda confirmada no banco: ID {venda_verificada.id}, Lucro: R$ {venda_verificada.profit}")
+            else:
+                print(f"[ERRO] Venda não encontrada após commit! ID: {venda.id}")
+            
+        except Exception as commit_error:
+            print(f"[ERRO] Erro ao fazer commit: {commit_error}")
+            db.rollback()
+            raise
         
         return {
             "status": "sucesso",
             "message": f"Serviço finalizado! +R$ {lucro:.2f} de lucro registrado.",
+            "profit": lucro,  # Adicionado para compatibilidade
             "data": {
                 "service_id": servico.id,
                 "service_name": servico.name,
@@ -2394,8 +2412,20 @@ async def financas_page(request: Request, db: Session = Depends(get_db)):
         
         # Busca histórico de vendas de serviços (finalizados diretamente do card)
         try:
-            service_sales = db.query(models.ServiceSaleHistory).order_by(desc(models.ServiceSaleHistory.sold_at)).all()
-            print(f"[INFO] Encontrados {len(service_sales)} registros de vendas de serviços")
+            # Verifica se a tabela existe
+            from sqlalchemy import inspect
+            inspector = inspect(db.bind)
+            tabelas = inspector.get_table_names()
+            
+            if 'service_sale_history' not in tabelas:
+                print("[ERRO] Tabela 'service_sale_history' não existe no banco de dados!")
+                print("[ERRO] Execute o script criar_todas_tabelas.sql para criar a tabela")
+                service_sales = []
+            else:
+                service_sales = db.query(models.ServiceSaleHistory).order_by(desc(models.ServiceSaleHistory.sold_at)).all()
+                print(f"[INFO] Encontrados {len(service_sales)} registros de vendas de serviços")
+                if len(service_sales) > 0:
+                    print(f"[INFO] Última venda: ID {service_sales[0].id}, Lucro: R$ {service_sales[0].profit}, Data: {service_sales[0].sold_at}")
         except Exception as e:
             print(f"[AVISO] Erro ao buscar histórico de vendas de serviços: {e}")
             print("[AVISO] A tabela service_sale_history pode não existir. Execute o script criar_todas_tabelas.sql")
