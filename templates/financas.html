@@ -603,7 +603,7 @@
                 totalCompras += {{ purchase.total_value or 0 }};
             {% endfor %}
             
-            // Calcula totais dos serviços
+            // Calcula totais das ordens de serviço
             {% for order in service_orders %}
                 totalServicos += {{ order.total_value or 0 }};
                 lucroTotal += {{ order.lucro or 0 }};
@@ -611,6 +611,27 @@
                     margens.push({{ order.margem_lucro }});
                 {% endif %}
             {% endfor %}
+            
+            // Calcula totais dos serviços finalizados diretamente do card (service_sales)
+            {% if service_sales %}
+            const serviceSalesData = [
+                {% for sale in service_sales %}
+                {
+                    sale_price: {{ sale.sale_price or 0 }},
+                    profit: {{ sale.profit or 0 }}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ];
+            
+            serviceSalesData.forEach(sale => {
+                totalServicos += sale.sale_price;
+                lucroTotal += sale.profit;
+                if (sale.sale_price > 0) {
+                    const margemSale = (sale.profit / sale.sale_price) * 100;
+                    margens.push(margemSale);
+                }
+            });
+            {% endif %}
             
             const margemMedia = margens.length > 0 ? margens.reduce((a, b) => a + b, 0) / margens.length : 0;
             
