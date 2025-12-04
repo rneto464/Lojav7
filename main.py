@@ -1684,6 +1684,7 @@ async def listar_ordens_servico(status: Optional[str] = None, db: Session = Depe
                 "service_description": ordem.service_description,
                 "status": ordem.status,
                 "total_value": float(ordem.total_value) if ordem.total_value else total,
+                "profit": float(ordem.profit) if ordem.profit is not None else None,
                 "notes": ordem.notes,
                 "created_at": ordem.created_at.isoformat() if ordem.created_at else None,
                 "completed_at": ordem.completed_at.isoformat() if ordem.completed_at else None,
@@ -1693,6 +1694,7 @@ async def listar_ordens_servico(status: Optional[str] = None, db: Session = Depe
                         "device_model": part.device_model,
                         "part_name": part.part_name if hasattr(part, 'part_name') else (part.replaced_part if hasattr(part, 'replaced_part') else "N/A"),
                         "price": float(part.price) if part.price else 0.0,
+                        "cost_price": float(part.cost_price) if part.cost_price else None,
                         "quantity": quantidades_pecas.get(part.id, 1)
                     }
                     for part in ordem.parts
@@ -1782,6 +1784,7 @@ async def obter_ordem_servico(ordem_id: int, db: Session = Depends(get_db)):
             "service_description": ordem.service_description,
             "status": ordem.status,
             "total_value": float(ordem.total_value) if ordem.total_value else total,
+            "profit": float(ordem.profit) if ordem.profit is not None else None,
             "notes": ordem.notes,
             "created_at": ordem.created_at.isoformat() if ordem.created_at else None,
             "completed_at": ordem.completed_at.isoformat() if ordem.completed_at else None,

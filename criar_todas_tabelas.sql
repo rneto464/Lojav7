@@ -164,6 +164,7 @@ CREATE TABLE IF NOT EXISTS service_orders (
     service_description VARCHAR NOT NULL,
     status VARCHAR DEFAULT 'em_andamento',
     total_value NUMERIC(10, 2) DEFAULT 0,
+    profit NUMERIC(10, 2),
     notes VARCHAR,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP
@@ -177,6 +178,7 @@ COMMENT ON TABLE service_orders IS 'Tabela de ordens de serviço';
 COMMENT ON COLUMN service_orders.order_number IS 'Número da ordem (ex: OS-2024-001)';
 COMMENT ON COLUMN service_orders.status IS 'Status: em_andamento, concluido ou cancelado';
 COMMENT ON COLUMN service_orders.total_value IS 'Valor total (peças + serviços)';
+COMMENT ON COLUMN service_orders.profit IS 'Lucro calculado: (Preço Venda Peça + Preço Serviço) - (Custo Compra Peça)';
 
 -- ============================================
 -- 9. TABELA: service_order_parts (Relacionamento Ordem-Peça)
